@@ -215,6 +215,40 @@ class MarketsResponse(CamelModel):
     comparison: list[MarketComparisonRow]
 
 
+class MarketPriceInput(CamelModel):
+    market: str  # JP / CN
+    price: float  # 原通貨での価格
+    currency: str = "JPY"
+    competitors: int | None = None
+    demand_index: int | None = None
+    review_count: int | None = None
+    source: str | None = None
+    source_url: str | None = None
+
+
+class ProductImport(CamelModel):
+    id: str
+    name: str
+    brand: str
+    category: str
+    sub_category: str
+    model: str = ""
+    size_tier: SizeTier = SizeTier.M
+    seasonality: Season = Season.ALL_YEAR
+    risk: RiskLevel = RiskLevel.MEDIUM
+    match_type: MatchType = MatchType.SIMILAR
+    match_confidence: int | None = None
+    image_url: str | None = None
+    japan: MarketPriceInput
+    china: MarketPriceInput
+
+
+class IngestResponse(CamelModel):
+    imported: int
+    products: int
+    market_prices: int
+
+
 class RegisterRequest(CamelModel):
     email: str
     password: str

@@ -137,6 +137,18 @@ export ANTHROPIC_MODEL="claude-opus-5"   # 任意（既定 claude-opus-5）
 スコア・商流方向は DB の生シグナル（価格・競合・需要・リスク等）から計算するため、
 `products.score` などの投入値は生の属性、`opportunities` はエンジンの計算結果を保持する。
 
+## データ取り込み（STEP 8 / MVP-02）
+
+外部の商品・価格データを正規化して DB へ取り込む経路。スクレイピングではなく、
+正規 API / 許可されたデータ提供手段 / データインポートを前提とする（原則: セクション 9）。
+
+| メソッド | パス | 説明 |
+|---|---|---|
+| POST | `/ingest/products` | `ProductImport[]` を正規化して upsert（categories/products/market_prices） |
+
+- 中国価格（CNY）は DB の為替レートで円へ正規化し、原価・通貨・取得日時・取得元を保存する（原則: セクション 94）。
+- データソースは `app/datasources/`（`DataSource` プロトコル + `MockDataSource`）で差し替え可能。
+
 ## 認証（STEP 19）
 
 Email/Password + JWT。パスワードは PBKDF2-HMAC-SHA256（標準ライブラリ）でハッシュ化する。

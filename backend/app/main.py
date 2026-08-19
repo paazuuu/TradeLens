@@ -25,16 +25,18 @@ from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from . import auth, repository, services
+from . import auth, ingest, repository, services
 from .agents import category_agent, product_discovery
 from .agents.schemas import CategoryTree, DecomposeRequest, DiscoveryRequest, DiscoveryResponse
 from .db import SessionLocal, get_session, init_db
 from .models import User
 from .schemas import (
+    IngestResponse,
     LoginRequest,
     MarketsResponse,
     Opportunity,
     ProductDetail,
+    ProductImport,
     ProfitSimulateRequest,
     ProfitSimulateResponse,
     RegisterRequest,
@@ -213,3 +215,11 @@ def post_decompose(req: DecomposeRequest) -> CategoryTree:
 def post_discovery(req: DiscoveryRequest) -> DiscoveryResponse:
     candidates, source = product_discovery.discover_products(req.query, req.limit)
     return DiscoveryResponse(query=req.query, candidates=candidates, source=source)
+
+
+# ---- データ取り込み（STEP 8 / MVP-02）。正規化して DB へ upsert する。 ----
+
+
+@app.post("/ingest/products", response_model=IngestResponse)
+def ingest_products(items: list[ProductImport], session: Session = Depends(get_session)) -> IngestResponse:
+    return ingest.import_products(session, items)
