@@ -29,6 +29,10 @@ export interface Messages {
     opportunities: { title: string; description: string };
     research: { title: string; description: string };
     productDetail: { title: string; description: string };
+    products: { title: string; description: string };
+    markets: { title: string; description: string };
+    seasonal: { title: string; description: string };
+    analytics: { title: string; description: string };
   };
   opportunities: {
     rankingTitle: string;
@@ -120,6 +124,41 @@ export interface Messages {
     confidencePrice: string;
     confidenceProfit: string;
   };
+  simulator: {
+    title: string;
+    description: string;
+    reset: string;
+  };
+  markets: {
+    japanAvgPrice: string;
+    chinaAvgPrice: string;
+    avgCompetitors: string;
+    avgDemand: string;
+    japanChinaHint: (japan: string, china: string) => string;
+    comparisonTitle: string;
+    subCategory: string;
+    products: string;
+    bidirectional: string;
+  };
+  seasonal: {
+    urgency: Record<"hot" | "soon" | "watch" | "later", string>;
+    peak: string;
+    recommendedBuy: string;
+    currentScore: string;
+    predictedScore: string;
+    daysToPeak: (days: number) => string;
+    monthLabel: (month: number) => string;
+    empty: string;
+  };
+  analytics: {
+    directionSplitTitle: string;
+    subCategoryScoreTitle: string;
+    marginDistributionTitle: string;
+    profitByProductTitle: string;
+    count: string;
+    avgScore: string;
+    profit: string;
+  };
   labels: {
     directionShort: Record<TradeDirection, string>;
     direction: Record<TradeDirection, string>;
@@ -157,6 +196,22 @@ const ja: Messages = {
     productDetail: {
       title: "Product Detail",
       description: "日本市場と中国市場の比較、総コストベースの利益内訳、AI による有望理由を表示します。",
+    },
+    products: {
+      title: "Products",
+      description: "調査済み商品データベース。商品を選ぶと詳細と利益シミュレーションを確認できます。",
+    },
+    markets: {
+      title: "Markets",
+      description: "日本市場と中国市場をカテゴリー単位で比較します。平均価格・競合・需要から有利な方向を把握します。",
+    },
+    seasonal: {
+      title: "Seasonal",
+      description: "季節需要の先取り。ピーク時期と推奨仕入れ時期をルールベースで予測します。",
+    },
+    analytics: {
+      title: "Analytics",
+      description: "商流方向・カテゴリー・利益率・推定利益の分布を可視化します。",
     },
   },
   opportunities: {
@@ -260,6 +315,41 @@ const ja: Messages = {
     confidencePrice: "価格信頼度",
     confidenceProfit: "利益信頼度",
   },
+  simulator: {
+    title: "利益シミュレーター",
+    description: "数値を調整すると、推定利益・利益率・ROI・損益分岐価格がリアルタイムで再計算されます。",
+    reset: "初期値に戻す",
+  },
+  markets: {
+    japanAvgPrice: "日本 平均価格",
+    chinaAvgPrice: "中国 平均価格",
+    avgCompetitors: "平均競合数",
+    avgDemand: "平均需要指数",
+    japanChinaHint: (japan, china) => `日本 ${japan} ・ 中国 ${china}`,
+    comparisonTitle: "カテゴリー別 日中比較",
+    subCategory: "カテゴリー",
+    products: "商品数",
+    bidirectional: "双方向",
+  },
+  seasonal: {
+    urgency: { hot: "30日以内", soon: "60日以内", watch: "90日以内", later: "90日超" },
+    peak: "ピーク時期",
+    recommendedBuy: "推奨仕入れ時期",
+    currentScore: "現在Score",
+    predictedScore: "予測Score",
+    daysToPeak: (days) => `ピークまで ${days}日`,
+    monthLabel: (month) => `${month}月`,
+    empty: "季節商品はありません。",
+  },
+  analytics: {
+    directionSplitTitle: "商流方向の構成",
+    subCategoryScoreTitle: "カテゴリー別 平均Score",
+    marginDistributionTitle: "利益率の分布",
+    profitByProductTitle: "商品別 推定利益",
+    count: "件数",
+    avgScore: "平均Score",
+    profit: "推定利益",
+  },
   labels: {
     directionShort: { JP_TO_CN: "日→中", CN_TO_JP: "中→日" },
     direction: { JP_TO_CN: "日本 → 中国", CN_TO_JP: "中国 → 日本" },
@@ -300,6 +390,22 @@ const zh: Messages = {
     productDetail: {
       title: "商品详情",
       description: "展示日本市场与中国市场的对比、基于全成本的利润明细，以及 AI 判定的商机理由。",
+    },
+    products: {
+      title: "商品库",
+      description: "已调研的商品数据库。选择商品即可查看详情与利润模拟。",
+    },
+    markets: {
+      title: "市场对比",
+      description: "按品类对比日本市场与中国市场。从平均价格、竞争与需求把握更有利的方向。",
+    },
+    seasonal: {
+      title: "季节商机",
+      description: "提前布局季节性需求。基于规则预测需求高峰与建议采购时期。",
+    },
+    analytics: {
+      title: "数据分析",
+      description: "可视化贸易方向、品类、利润率与预估利润的分布。",
     },
   },
   opportunities: {
@@ -402,6 +508,41 @@ const zh: Messages = {
     confidenceMatch: "匹配可信度",
     confidencePrice: "价格可信度",
     confidenceProfit: "利润可信度",
+  },
+  simulator: {
+    title: "利润模拟器",
+    description: "调整数值后，预估利润、利润率、ROI 与盈亏平衡价会实时重新计算。",
+    reset: "恢复初始值",
+  },
+  markets: {
+    japanAvgPrice: "日本 平均价格",
+    chinaAvgPrice: "中国 平均价格",
+    avgCompetitors: "平均竞争数",
+    avgDemand: "平均需求指数",
+    japanChinaHint: (japan, china) => `日本 ${japan} ・ 中国 ${china}`,
+    comparisonTitle: "分品类 日中对比",
+    subCategory: "品类",
+    products: "商品数",
+    bidirectional: "双向",
+  },
+  seasonal: {
+    urgency: { hot: "30天内", soon: "60天内", watch: "90天内", later: "90天以上" },
+    peak: "需求高峰",
+    recommendedBuy: "建议采购时期",
+    currentScore: "当前Score",
+    predictedScore: "预测Score",
+    daysToPeak: (days) => `距高峰 ${days}天`,
+    monthLabel: (month) => `${month}月`,
+    empty: "暂无季节商品。",
+  },
+  analytics: {
+    directionSplitTitle: "贸易方向构成",
+    subCategoryScoreTitle: "分品类 平均Score",
+    marginDistributionTitle: "利润率分布",
+    profitByProductTitle: "分商品 预估利润",
+    count: "数量",
+    avgScore: "平均Score",
+    profit: "预估利润",
   },
   labels: {
     directionShort: { JP_TO_CN: "日→中", CN_TO_JP: "中→日" },
