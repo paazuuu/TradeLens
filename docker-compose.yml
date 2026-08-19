@@ -1,0 +1,42 @@
+# CrossBorder Opportunity AI — バックエンド本番スタック（STEP 20）。
+# PostgreSQL + FastAPI。フロントエンド（Next.js）は Vercel へデプロイする想定
+# （DEPLOYMENT.md 参照）。ローカル一括起動: docker compose up --build
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: crossborder
+      POSTGRES_PASSWORD: crossborder
+      POSTGRES_DB: crossborder
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U crossborder"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  api:
+    build: ./backend
+    environment:
+      DATABASE_URL: postgresql+psycopg://crossborder:crossborder@db:5432/crossborder
+      CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:3000}
+      # 本番では必ずランダムな秘密鍵に置き換える。
+      AUTH_SECRET: ${AUTH_SECRET:-dev-insecure-secret-change-me}
+      # LLM を使う場合のみ設定（未設定ならルールベースで動作）。
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+    depends_on:
+      db:
+        condition: service_healthy
+    ports:
+      - "8000:8000"
+    healthcheck:
+      test: ["CMD-SHELL", "python -c \"import urllib.request; urllib.request.urlopen('http://localhost:8000/health')\""]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  pgdata:
