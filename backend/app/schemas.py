@@ -215,6 +215,27 @@ class MarketsResponse(CamelModel):
     comparison: list[MarketComparisonRow]
 
 
+class MatchRequest(CamelModel):
+    japan_name: str
+    china_name: str
+    japan_brand: str | None = None
+    china_brand: str | None = None
+    japan_model: str | None = None
+    china_model: str | None = None
+
+
+class MatchSignals(CamelModel):
+    name_similarity: float
+    model_match: bool
+    brand_match: bool
+
+
+class MatchResult(CamelModel):
+    match_type: MatchType
+    confidence: int
+    signals: MatchSignals
+
+
 class MarketPriceInput(CamelModel):
     market: str  # JP / CN
     price: float  # 原通貨での価格

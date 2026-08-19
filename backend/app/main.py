@@ -25,7 +25,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from . import auth, ingest, repository, services
+from . import auth, ingest, matching_engine, repository, services
 from .agents import category_agent, product_discovery
 from .agents.schemas import CategoryTree, DecomposeRequest, DiscoveryRequest, DiscoveryResponse
 from .db import SessionLocal, get_session, init_db
@@ -34,6 +34,8 @@ from .schemas import (
     IngestResponse,
     LoginRequest,
     MarketsResponse,
+    MatchRequest,
+    MatchResult,
     Opportunity,
     ProductDetail,
     ProductImport,
@@ -223,3 +225,11 @@ def post_discovery(req: DiscoveryRequest) -> DiscoveryResponse:
 @app.post("/ingest/products", response_model=IngestResponse)
 def ingest_products(items: list[ProductImport], session: Session = Depends(get_session)) -> IngestResponse:
     return ingest.import_products(session, items)
+
+
+# ---- 商品マッチング（STEP 9）。日中商品を複数シグナルでマッチングする。 ----
+
+
+@app.post("/matching", response_model=MatchResult)
+def post_matching(req: MatchRequest) -> MatchResult:
+    return matching_engine.match_products(req)

@@ -123,8 +123,11 @@ export ANTHROPIC_API_KEY="sk-ant-..."
 export ANTHROPIC_MODEL="claude-opus-5"   # 任意（既定 claude-opus-5）
 ```
 
-## エンジン層（STEP 10-14）
+## エンジン層（STEP 9-14）
 
+- **Matching Engine**（`matching_engine.py`, STEP 9）: 日本商品と中国商品を、名前類似度
+  （difflib）・型番一致・ブランド一致の複数シグナルでマッチングし、マッチタイプと信頼度を
+  算出する（原則: セクション 7）。エンドポイント `POST /matching`。
 - **Profit Engine**（`economics.py`, STEP 10-11）: 方向・コストパラメータを引数化。
   コストパラメータは DB の `cost_rules` から注入する（`repository.load_cost_params`）。
 - **Opportunity + Direction Engine**（`opportunity_engine.py`, STEP 12-13）:
