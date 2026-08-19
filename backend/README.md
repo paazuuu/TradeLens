@@ -104,8 +104,27 @@ backend/
 └── schema.sql        # 生成された参照用 DDL
 ```
 
-## 今後（STEP 7 以降）
+## AI 層（STEP 7-8）
 
-- STEP 7-8: Category Agent / Product Discovery（AI 層）
+Category Agent（カテゴリー分解）と Product Discovery Agent（商品候補生成）を提供する。
+LLM（Anthropic）が利用可能ならそれを用い、認証情報が無い / 失敗した場合は
+ルールベースへフォールバックする（原則: セクション 93「AI にすべてを任せない」）。
+応答の `source` フィールドで生成元（`ai` / `rule`）を明示する（原則: セクション 94）。
+
+| メソッド | パス | 説明 |
+|---|---|---|
+| POST | `/categories/decompose` | カテゴリー → サブカテゴリー・商品タイプ（STEP 7） |
+| POST | `/discovery` | 商品タイプ → 具体的な商品候補（ブランド / OEM 区別、STEP 8） |
+
+LLM を有効化するには Anthropic の認証情報を設定する（未設定ならルールベースで動作）:
+
+```bash
+export ANTHROPIC_API_KEY="sk-ant-..."
+export ANTHROPIC_MODEL="claude-opus-5"   # 任意（既定 claude-opus-5）
+```
+
+## 今後（STEP 9 以降）
+
 - STEP 9-14: Matching / Pricing / Profit / Opportunity / Direction / Seasonal Engine の実データ化
-- STEP 15: フロントの `src/lib/research/*` を本 API 呼び出しへ差し替え（API を DB バックエンドへ）
+- Product Discovery の結果を価格取得層・DB（products / market_prices）へ接続
+- フロントの AI Research 画面を `/categories/decompose` 等へ結線

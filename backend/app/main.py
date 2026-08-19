@@ -25,6 +25,8 @@ from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
 
 from . import repository, services
+from .agents import category_agent, product_discovery
+from .agents.schemas import CategoryTree, DecomposeRequest, DiscoveryRequest, DiscoveryResponse
 from .db import SessionLocal, get_session, init_db
 from .schemas import (
     MarketsResponse,
@@ -132,3 +134,17 @@ def get_markets(session: Session = Depends(get_session)) -> MarketsResponse:
 def get_seasonal(session: Session = Depends(get_session)) -> list[SeasonalOpportunity]:
     entries = repository.load_catalog(session)
     return services.get_seasonal_opportunities(entries=entries)
+
+
+# ---- AI 層（STEP 7-8）。LLM 優先・失敗時はルールベースにフォールバック。 ----
+
+
+@app.post("/categories/decompose", response_model=CategoryTree)
+def post_decompose(req: DecomposeRequest) -> CategoryTree:
+    return category_agent.decompose_category(req.category)
+
+
+@app.post("/discovery", response_model=DiscoveryResponse)
+def post_discovery(req: DiscoveryRequest) -> DiscoveryResponse:
+    candidates, source = product_discovery.discover_products(req.query, req.limit)
+    return DiscoveryResponse(query=req.query, candidates=candidates, source=source)
