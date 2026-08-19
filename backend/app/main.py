@@ -20,7 +20,7 @@ import os
 import uuid
 from contextlib import asynccontextmanager
 
-from fastapi import Depends, FastAPI, Header, HTTPException, Query
+from fastapi import Depends, FastAPI, Header, HTTPException, Query, Response
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy import select
 from sqlalchemy.orm import Session
@@ -29,7 +29,7 @@ from . import auth, ingest, matching_engine, repository, services
 from .agents import category_agent, product_discovery
 from .agents.schemas import CategoryTree, DecomposeRequest, DiscoveryRequest, DiscoveryResponse
 from .db import SessionLocal, get_session, init_db
-from .models import User
+from .models import User, Watchlist
 from .schemas import (
     IngestResponse,
     LoginRequest,
@@ -48,6 +48,8 @@ from .schemas import (
     TokenResponse,
     TradeDirection,
     UserOut,
+    WatchlistCreate,
+    WatchlistItemOut,
 )
 from .seed import seed_database
 
@@ -139,6 +141,52 @@ def login(req: LoginRequest, session: Session = Depends(get_session)) -> TokenRe
 @app.get("/auth/me", response_model=UserOut)
 def me(user: User = Depends(_current_user)) -> UserOut:
     return UserOut(id=user.id, email=user.email, display_name=user.display_name)
+
+
+# ---- Watchlists（STEP 16）。認証ユーザーに紐づく監視カテゴリー/商品。 ----
+
+
+def _to_watchlist_out(item: Watchlist) -> WatchlistItemOut:
+    return WatchlistItemOut(id=item.id, kind=item.kind, value=item.value, monitor_frequency=item.monitor_frequency)
+
+
+@app.get("/watchlists", response_model=list[WatchlistItemOut])
+def list_watchlists(
+    user: User = Depends(_current_user), session: Session = Depends(get_session)
+) -> list[WatchlistItemOut]:
+    items = session.scalars(select(Watchlist).where(Watchlist.user_id == user.id).order_by(Watchlist.id)).all()
+    return [_to_watchlist_out(item) for item in items]
+
+
+@app.post("/watchlists", response_model=WatchlistItemOut, status_code=201)
+def add_watchlist(
+    req: WatchlistCreate, user: User = Depends(_current_user), session: Session = Depends(get_session)
+) -> WatchlistItemOut:
+    if req.kind not in ("category", "product"):
+        raise HTTPException(status_code=400, detail="kind must be 'category' or 'product'")
+    existing = session.scalar(
+        select(Watchlist).where(
+            Watchlist.user_id == user.id, Watchlist.kind == req.kind, Watchlist.value == req.value
+        )
+    )
+    if existing is not None:
+        return _to_watchlist_out(existing)
+    item = Watchlist(user_id=user.id, kind=req.kind, value=req.value, monitor_frequency=req.monitor_frequency)
+    session.add(item)
+    session.commit()
+    return _to_watchlist_out(item)
+
+
+@app.delete("/watchlists/{item_id}", status_code=204)
+def delete_watchlist(
+    item_id: int, user: User = Depends(_current_user), session: Session = Depends(get_session)
+) -> Response:
+    item = session.get(Watchlist, item_id)
+    if item is None or item.user_id != user.id:
+        raise HTTPException(status_code=404, detail="watchlist item not found")
+    session.delete(item)
+    session.commit()
+    return Response(status_code=204)
 
 
 @app.post("/research", response_model=ResearchJob)

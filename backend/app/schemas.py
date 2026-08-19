@@ -270,6 +270,19 @@ class IngestResponse(CamelModel):
     market_prices: int
 
 
+class WatchlistCreate(CamelModel):
+    kind: str  # category / product
+    value: str
+    monitor_frequency: str = "weekly"
+
+
+class WatchlistItemOut(CamelModel):
+    id: int
+    kind: str
+    value: str
+    monitor_frequency: str
+
+
 class RegisterRequest(CamelModel):
     email: str
     password: str
