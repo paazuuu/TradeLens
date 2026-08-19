@@ -2,6 +2,7 @@
 
 import * as React from "react";
 
+import { type CategoryTree, decomposeCategory } from "@/lib/research/agents";
 import { runResearch } from "@/lib/research/data-source";
 import {
   defaultResearchOptions,
@@ -24,6 +25,7 @@ export function ResearchWorkspace() {
   const [options, setOptions] = React.useState<ResearchOptions>(defaultResearchOptions);
   const [completedCount, setCompletedCount] = React.useState(0);
   const [result, setResult] = React.useState<ResearchResult | null>(null);
+  const [tree, setTree] = React.useState<CategoryTree | null>(null);
 
   // running フェーズの間、最終段階まで一定間隔で進める。
   React.useEffect(() => {
@@ -32,15 +34,18 @@ export function ResearchWorkspace() {
     return () => clearTimeout(timer);
   }, [phase, completedCount]);
 
-  // 最終段階に到達したら API（または モック）を呼び、結果を取得して done へ遷移する。
+  // 最終段階に到達したら、カテゴリー分解（Category Agent）とリサーチ結果を並行取得し done へ。
   React.useEffect(() => {
     if (phase !== "running" || completedCount < researchStages.length) return;
     let cancelled = false;
-    void runResearch(options).then((researchResult) => {
-      if (cancelled) return;
-      setResult(researchResult);
-      setPhase("done");
-    });
+    void Promise.all([runResearch(options), decomposeCategory(options.category)]).then(
+      ([researchResult, categoryTree]) => {
+        if (cancelled) return;
+        setResult(researchResult);
+        setTree(categoryTree);
+        setPhase("done");
+      },
+    );
     return () => {
       cancelled = true;
     };
@@ -55,6 +60,7 @@ export function ResearchWorkspace() {
   function handleReset() {
     setCompletedCount(0);
     setResult(null);
+    setTree(null);
     setPhase("form");
   }
 
@@ -63,7 +69,7 @@ export function ResearchWorkspace() {
   }
 
   if (phase === "done" && result) {
-    return <ResearchResultView category={options.category} onReset={handleReset} result={result} />;
+    return <ResearchResultView category={options.category} onReset={handleReset} result={result} tree={tree} />;
   }
 
   return <ResearchForm onChange={setOptions} onSubmit={handleSubmit} options={options} />;

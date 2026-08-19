@@ -147,6 +147,9 @@ export interface Messages {
     statsCnToJp: string;
     reset: string;
     viewOpportunities: string;
+    decompositionTitle: string;
+    sourceAi: string;
+    sourceRule: string;
   };
   productDetail: {
     notFound: string;
@@ -407,6 +410,9 @@ const ja: Messages = {
     statsCnToJp: "中国 → 日本",
     reset: "条件を変えて再検索",
     viewOpportunities: "有望商品ランキングを見る",
+    decompositionTitle: "AI カテゴリー分解",
+    sourceAi: "AI 生成",
+    sourceRule: "ルールベース",
   },
   productDetail: {
     notFound: "商品が見つかりませんでした。",
@@ -670,6 +676,9 @@ const zh: Messages = {
     statsCnToJp: "中国 → 日本",
     reset: "调整条件重新搜索",
     viewOpportunities: "查看优质商品排行",
+    decompositionTitle: "AI 品类拆解",
+    sourceAi: "AI 生成",
+    sourceRule: "规则生成",
   },
   productDetail: {
     notFound: "未找到该商品。",

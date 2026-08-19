@@ -4,18 +4,21 @@ import Link from "next/link";
 
 import { ArrowRight, CheckCircle2, RotateCcw } from "lucide-react";
 
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useI18n } from "@/lib/i18n/use-i18n";
+import type { CategoryTree } from "@/lib/research/agents";
 import type { ResearchResult } from "@/lib/research/research-flow";
 
 interface ResearchResultViewProps {
   category: string;
   result: ResearchResult;
+  tree: CategoryTree | null;
   onReset: () => void;
 }
 
-export function ResearchResultView({ category, result, onReset }: ResearchResultViewProps) {
+export function ResearchResultView({ category, result, tree, onReset }: ResearchResultViewProps) {
   const { m } = useI18n();
   const r = m.research;
 
@@ -50,6 +53,31 @@ export function ResearchResultView({ category, result, onReset }: ResearchResult
             </div>
           ))}
         </div>
+
+        {tree && tree.subCategories.length > 0 ? (
+          <div className="flex flex-col gap-3">
+            <div className="flex items-center gap-2">
+              <span className="font-medium text-sm">{r.decompositionTitle}</span>
+              <Badge variant={tree.source === "ai" ? "default" : "secondary"}>
+                {tree.source === "ai" ? r.sourceAi : r.sourceRule}
+              </Badge>
+            </div>
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+              {tree.subCategories.map((sub) => (
+                <div className="flex flex-col gap-1.5 rounded-lg border p-3" key={sub.name}>
+                  <span className="font-medium text-sm">{sub.name}</span>
+                  <div className="flex flex-wrap gap-1">
+                    {sub.productTypes.map((pt) => (
+                      <Badge key={pt} variant="outline">
+                        {pt}
+                      </Badge>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        ) : null}
 
         <div className="flex flex-wrap justify-end gap-2">
           <Button onClick={onReset} type="button" variant="outline">
