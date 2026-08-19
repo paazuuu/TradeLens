@@ -123,8 +123,21 @@ export ANTHROPIC_API_KEY="sk-ant-..."
 export ANTHROPIC_MODEL="claude-opus-5"   # 任意（既定 claude-opus-5）
 ```
 
-## 今後（STEP 9 以降）
+## エンジン層（STEP 10-14）
 
-- STEP 9-14: Matching / Pricing / Profit / Opportunity / Direction / Seasonal Engine の実データ化
+- **Profit Engine**（`economics.py`, STEP 10-11）: 方向・コストパラメータを引数化。
+  コストパラメータは DB の `cost_rules` から注入する（`repository.load_cost_params`）。
+- **Opportunity + Direction Engine**（`opportunity_engine.py`, STEP 12-13）:
+  各商品について 日本→中国 / 中国→日本 の Opportunity Score を別々に算出し、高い方を
+  BEST_DIRECTION とする。スコアはセクション 11 の重み付き要素（利益率・利益額・需要・
+  価格差・競合・仕入安定性・季節性・リスク・為替安定性）から決定論的に導く。
+- **Seasonal Engine**（`services.py`, STEP 14）: 月・季節ベースのルールでピーク時期と
+  推奨仕入れ時期を算定。
+
+スコア・商流方向は DB の生シグナル（価格・競合・需要・リスク等）から計算するため、
+`products.score` などの投入値は生の属性、`opportunities` はエンジンの計算結果を保持する。
+
+## 今後
+
 - Product Discovery の結果を価格取得層・DB（products / market_prices）へ接続
-- フロントの AI Research 画面を `/categories/decompose` 等へ結線
+- 為替 `exchange_rates` の変動から fx_stability を実データ化

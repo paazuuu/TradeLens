@@ -12,13 +12,13 @@ from datetime import datetime, timezone
 from sqlalchemy import delete
 from sqlalchemy.orm import Session
 
+from . import opportunity_engine
 from .catalog import PRODUCT_CATALOG
 from .economics import (
     IMPORT_TAX_RATE,
     OTHER_RATE,
     PACKAGING,
     PLATFORM_FEE_RATE,
-    derive_economics,
     derive_reasons,
     price_gap_rate,
 )
@@ -81,7 +81,9 @@ def seed_database(session: Session) -> dict[str, int]:
     counts = {"products": 0, "market_prices": 0, "opportunities": 0, "profit_calculations": 0, "seasonal_profiles": 0}
 
     for entry in PRODUCT_CATALOG:
-        economics = derive_economics(entry)
+        # 商流方向とスコアはエンジンで計算し、その方向の利益を保存する（STEP 12-13）。
+        best = opportunity_engine.evaluate(entry).best
+        economics = best.economics
 
         session.add(
             Product(
@@ -125,7 +127,7 @@ def seed_database(session: Session) -> dict[str, int]:
         session.add(
             ProfitCalculation(
                 product_id=entry.id,
-                direction=entry.best_direction.value,
+                direction=best.direction.value,
                 sell_price=economics.sell_price,
                 purchase_price=economics.cost.purchase_price,
                 total_cost=economics.total_cost,
@@ -142,14 +144,14 @@ def seed_database(session: Session) -> dict[str, int]:
         session.add(
             OpportunityRecord(
                 product_id=entry.id,
-                direction=entry.best_direction.value,
-                score=entry.score,
+                direction=best.direction.value,
+                score=best.score,
                 estimated_profit=economics.estimated_profit,
                 margin_rate=economics.margin_rate,
                 price_gap_rate=price_gap_rate(entry),
                 seasonality=entry.seasonality.value,
                 risk=entry.risk.value,
-                reasons=[r.value for r in derive_reasons(entry, economics)],
+                reasons=[r.value for r in derive_reasons(entry, best.direction, economics)],
                 computed_at=now,
             )
         )

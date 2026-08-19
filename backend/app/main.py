@@ -80,7 +80,8 @@ def health() -> dict[str, str]:
 @app.post("/research", response_model=ResearchJob)
 def create_research(options: ResearchOptions, session: Session = Depends(get_session)) -> ResearchJob:
     entries = repository.load_catalog(session)
-    result = services.compute_research_result(options, entries=entries)
+    params = repository.load_cost_params(session)
+    result = services.compute_research_result(options, entries=entries, params=params)
     job = ResearchJob(id=f"job-{uuid.uuid4().hex[:12]}", status="completed", options=options, result=result)
     _research_jobs[job.id] = job
     return job
@@ -102,15 +103,17 @@ def get_opportunities(
     session: Session = Depends(get_session),
 ) -> list[Opportunity]:
     entries = repository.load_catalog(session)
+    params = repository.load_cost_params(session)
     return services.list_opportunities(
-        direction=direction, min_score=min_score, min_margin=min_margin, entries=entries
+        direction=direction, min_score=min_score, min_margin=min_margin, entries=entries, params=params
     )
 
 
 @app.get("/products/{product_id}", response_model=ProductDetail)
 def get_product(product_id: str, session: Session = Depends(get_session)) -> ProductDetail:
     entries = repository.load_catalog(session)
-    detail = services.get_product_detail(product_id, entries=entries)
+    params = repository.load_cost_params(session)
+    detail = services.get_product_detail(product_id, entries=entries, params=params)
     if detail is None:
         raise HTTPException(status_code=404, detail="product not found")
     return detail
@@ -124,16 +127,18 @@ def post_profit_simulate(req: ProfitSimulateRequest) -> ProfitSimulateResponse:
 @app.get("/markets", response_model=MarketsResponse)
 def get_markets(session: Session = Depends(get_session)) -> MarketsResponse:
     entries = repository.load_catalog(session)
+    params = repository.load_cost_params(session)
     return MarketsResponse(
         overview=services.get_market_overview(entries=entries),
-        comparison=services.get_market_comparison(entries=entries),
+        comparison=services.get_market_comparison(entries=entries, params=params),
     )
 
 
 @app.get("/seasonal", response_model=list[SeasonalOpportunity])
 def get_seasonal(session: Session = Depends(get_session)) -> list[SeasonalOpportunity]:
     entries = repository.load_catalog(session)
-    return services.get_seasonal_opportunities(entries=entries)
+    params = repository.load_cost_params(session)
+    return services.get_seasonal_opportunities(entries=entries, params=params)
 
 
 # ---- AI 層（STEP 7-8）。LLM 優先・失敗時はルールベースにフォールバック。 ----

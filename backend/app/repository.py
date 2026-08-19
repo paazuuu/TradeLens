@@ -10,7 +10,8 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session, selectinload
 
 from .catalog import CatalogEntry
-from .models import Product
+from .economics import DEFAULT_COST_PARAMS, CostParams
+from .models import CostRule, Product
 from .schemas import MarketSnapshot, MatchType, RiskLevel, Season, SizeTier, TradeDirection
 
 
@@ -68,3 +69,42 @@ def load_catalog(session: Session) -> list[CatalogEntry]:
 
 def catalog_is_empty(session: Session) -> bool:
     return session.scalar(select(Product.id).limit(1)) is None
+
+
+def load_cost_params(session: Session) -> CostParams:
+    """DB の cost_rules から Profit Engine のコストパラメータを構築する（STEP 10-11）。
+
+    サイズ帯別の送料・梱包費と、共通の税率・手数料率を組み立てる。
+    行が無ければ既定パラメータを返す。
+    """
+    rules = session.scalars(select(CostRule).where(CostRule.size_tier.is_not(None))).all()
+    if not rules:
+        return DEFAULT_COST_PARAMS
+
+    intl: dict[SizeTier, int] = dict(DEFAULT_COST_PARAMS.intl_shipping)
+    domestic: dict[SizeTier, int] = dict(DEFAULT_COST_PARAMS.domestic_shipping)
+    packaging: dict[SizeTier, int] = dict(DEFAULT_COST_PARAMS.packaging)
+    import_tax_rate = DEFAULT_COST_PARAMS.import_tax_rate
+    platform_fee_rate = DEFAULT_COST_PARAMS.platform_fee_rate
+    other_rate = DEFAULT_COST_PARAMS.other_rate
+
+    for rule in rules:
+        try:
+            tier = SizeTier(rule.size_tier)
+        except ValueError:
+            continue
+        intl[tier] = rule.intl_shipping
+        domestic[tier] = rule.domestic_shipping
+        packaging[tier] = rule.packaging
+        import_tax_rate = rule.import_tax_rate
+        platform_fee_rate = rule.platform_fee_rate
+        other_rate = rule.other_rate
+
+    return CostParams(
+        intl_shipping=intl,
+        domestic_shipping=domestic,
+        packaging=packaging,
+        import_tax_rate=import_tax_rate,
+        platform_fee_rate=platform_fee_rate,
+        other_rate=other_rate,
+    )
