@@ -34,6 +34,45 @@ export interface Messages {
     markets: { title: string; description: string };
     seasonal: { title: string; description: string };
     analytics: { title: string; description: string };
+    watchlists: { title: string; description: string };
+    alerts: { title: string; description: string };
+    settings: { title: string; description: string };
+  };
+  watchlists: {
+    categoriesTitle: string;
+    productsTitle: string;
+    addCategory: string;
+    addPlaceholder: string;
+    remove: string;
+    emptyCategories: string;
+    emptyProducts: string;
+  };
+  alerts: {
+    newOpportunity: string;
+    seasonApproaching: string;
+    reasonsLabel: string;
+    recommendedResearch: string;
+    empty: string;
+  };
+  settings: {
+    fxTitle: string;
+    costTitle: string;
+    thresholdTitle: string;
+    notificationTitle: string;
+    exchangeRate: string;
+    exchangeRateHint: string;
+    intlShipping: string;
+    domesticShipping: string;
+    importTaxRate: string;
+    platformFeeRate: string;
+    minMargin: string;
+    minScore: string;
+    emailAlerts: string;
+    monitorFrequency: string;
+    frequency: Record<"daily" | "weekly" | "monthly", string>;
+    save: string;
+    reset: string;
+    saved: string;
   };
   dashboard: {
     kpi: {
@@ -235,6 +274,54 @@ const ja: Messages = {
       title: "Analytics",
       description: "商流方向・カテゴリー・利益率・推定利益の分布を可視化します。",
     },
+    watchlists: {
+      title: "Watchlists",
+      description: "監視するカテゴリーと商品を保存します。設定した頻度で自動再調査の対象になります。",
+    },
+    alerts: {
+      title: "Alerts",
+      description: "Score 上昇や季節需要の接近など、商機の変化を通知します。",
+    },
+    settings: {
+      title: "Settings",
+      description: "為替・コスト・利益率/Score 閾値・通知・監視頻度を設定します。値はこのブラウザに保存されます。",
+    },
+  },
+  watchlists: {
+    categoriesTitle: "監視カテゴリー",
+    productsTitle: "監視商品",
+    addCategory: "追加",
+    addPlaceholder: "カテゴリー名を入力",
+    remove: "削除",
+    emptyCategories: "監視中のカテゴリーはありません。",
+    emptyProducts: "監視中の商品はありません。",
+  },
+  alerts: {
+    newOpportunity: "🔥 新しい商機",
+    seasonApproaching: "🌱 季節需要が接近",
+    reasonsLabel: "理由",
+    recommendedResearch: "推奨調査時期",
+    empty: "現在アラートはありません。",
+  },
+  settings: {
+    fxTitle: "為替",
+    costTitle: "既定コスト",
+    thresholdTitle: "閾値",
+    notificationTitle: "通知・監視",
+    exchangeRate: "為替レート (CNY→JPY)",
+    exchangeRateHint: "1 元あたりの円",
+    intlShipping: "既定 国際送料",
+    domesticShipping: "既定 国内送料",
+    importTaxRate: "関税・税率 (%)",
+    platformFeeRate: "販売手数料率 (%)",
+    minMargin: "最低利益率 (%)",
+    minScore: "最低 Opportunity Score",
+    emailAlerts: "メールアラート",
+    monitorFrequency: "監視頻度",
+    frequency: { daily: "毎日", weekly: "毎週", monthly: "毎月" },
+    save: "保存",
+    reset: "既定値に戻す",
+    saved: "設定を保存しました。",
   },
   dashboard: {
     kpi: {
@@ -450,6 +537,54 @@ const zh: Messages = {
       title: "数据分析",
       description: "可视化贸易方向、品类、利润率与预估利润的分布。",
     },
+    watchlists: {
+      title: "关注列表",
+      description: "保存需要监控的品类与商品。将按设定的频率自动重新调研。",
+    },
+    alerts: {
+      title: "提醒",
+      description: "当 Score 上升或季节需求临近等商机发生变化时进行通知。",
+    },
+    settings: {
+      title: "设置",
+      description: "设置汇率、成本、利润率/Score 阈值、通知与监控频率。数值保存在本浏览器中。",
+    },
+  },
+  watchlists: {
+    categoriesTitle: "监控品类",
+    productsTitle: "监控商品",
+    addCategory: "添加",
+    addPlaceholder: "输入品类名称",
+    remove: "移除",
+    emptyCategories: "暂无监控中的品类。",
+    emptyProducts: "暂无监控中的商品。",
+  },
+  alerts: {
+    newOpportunity: "🔥 新商机",
+    seasonApproaching: "🌱 季节需求临近",
+    reasonsLabel: "理由",
+    recommendedResearch: "建议调研时期",
+    empty: "当前没有提醒。",
+  },
+  settings: {
+    fxTitle: "汇率",
+    costTitle: "默认成本",
+    thresholdTitle: "阈值",
+    notificationTitle: "通知与监控",
+    exchangeRate: "汇率 (CNY→JPY)",
+    exchangeRateHint: "每 1 元对应的日元",
+    intlShipping: "默认 国际运费",
+    domesticShipping: "默认 国内运费",
+    importTaxRate: "关税・税率 (%)",
+    platformFeeRate: "销售手续费率 (%)",
+    minMargin: "最低利润率 (%)",
+    minScore: "最低 Opportunity Score",
+    emailAlerts: "邮件提醒",
+    monitorFrequency: "监控频率",
+    frequency: { daily: "每天", weekly: "每周", monthly: "每月" },
+    save: "保存",
+    reset: "恢复默认值",
+    saved: "设置已保存。",
   },
   dashboard: {
     kpi: {
