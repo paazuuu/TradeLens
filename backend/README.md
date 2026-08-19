@@ -42,6 +42,24 @@ uvicorn app.main:app --reload --port 8000
 
 レスポンスは camelCase で返し、フロントの `src/lib/research/types.ts` と対応する。
 
+## フロントエンドとの結線
+
+フロント（Next.js）は環境変数 `NEXT_PUBLIC_API_URL` が設定されていれば本 API から
+データを取得し、未設定・到達不能時はモックデータへフォールバックする
+（`src/lib/research/data-source.ts`）。そのためバックエンド未起動でもフロントは単体で動く。
+
+```bash
+# フロントのルートに .env.local を作成
+echo 'NEXT_PUBLIC_API_URL=http://localhost:8000' > .env.local
+
+# バックエンド起動 → フロント起動
+cd backend && uvicorn app.main:app --reload --port 8000
+npm run dev   # 別ターミナル
+```
+
+結線済みの画面: Dashboard 以外の主要読み取り画面（Opportunities / Products /
+Product Detail / Markets / Seasonal）と AI Research（POST /research）。
+
 ## データベース（STEP 6）
 
 PostgreSQL を既定とし、`DATABASE_URL` 未設定時はローカル開発用に SQLite へフォールバックする。

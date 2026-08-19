@@ -2,8 +2,8 @@
 
 import * as React from "react";
 
+import { runResearch } from "@/lib/research/data-source";
 import {
-  computeMockResult,
   defaultResearchOptions,
   type ResearchOptions,
   type ResearchResult,
@@ -25,18 +25,25 @@ export function ResearchWorkspace() {
   const [completedCount, setCompletedCount] = React.useState(0);
   const [result, setResult] = React.useState<ResearchResult | null>(null);
 
-  // running フェーズの間、段階を一定間隔で進める。
+  // running フェーズの間、最終段階まで一定間隔で進める。
   React.useEffect(() => {
-    if (phase !== "running") return;
-
-    if (completedCount >= researchStages.length) {
-      setResult(computeMockResult(options));
-      setPhase("done");
-      return;
-    }
-
+    if (phase !== "running" || completedCount >= researchStages.length) return;
     const timer = setTimeout(() => setCompletedCount((count) => count + 1), STAGE_DURATION_MS);
     return () => clearTimeout(timer);
+  }, [phase, completedCount]);
+
+  // 最終段階に到達したら API（または モック）を呼び、結果を取得して done へ遷移する。
+  React.useEffect(() => {
+    if (phase !== "running" || completedCount < researchStages.length) return;
+    let cancelled = false;
+    void runResearch(options).then((researchResult) => {
+      if (cancelled) return;
+      setResult(researchResult);
+      setPhase("done");
+    });
+    return () => {
+      cancelled = true;
+    };
   }, [phase, completedCount, options]);
 
   function handleSubmit() {

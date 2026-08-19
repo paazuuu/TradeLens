@@ -8,7 +8,7 @@ from __future__ import annotations
 from datetime import datetime, timezone
 from statistics import mean, median
 
-from .catalog import PRODUCT_CATALOG, CatalogEntry, find_entry
+from .catalog import PRODUCT_CATALOG, CatalogEntry
 from .economics import derive_confidence, derive_economics, derive_reasons, price_gap_rate
 from .schemas import (
     MarketAggregate,
@@ -56,8 +56,10 @@ def list_opportunities(
     direction: TradeDirection | None = None,
     min_score: int | None = None,
     min_margin: float | None = None,
+    entries: list[CatalogEntry] | None = None,
 ) -> list[Opportunity]:
-    items = [_to_opportunity(entry) for entry in PRODUCT_CATALOG]
+    source = entries if entries is not None else PRODUCT_CATALOG
+    items = [_to_opportunity(entry) for entry in source]
     if direction is not None:
         items = [o for o in items if o.best_direction == direction]
     if min_score is not None:
@@ -67,8 +69,9 @@ def list_opportunities(
     return sorted(items, key=lambda o: o.score, reverse=True)
 
 
-def get_product_detail(product_id: str) -> ProductDetail | None:
-    entry = find_entry(product_id)
+def get_product_detail(product_id: str, entries: list[CatalogEntry] | None = None) -> ProductDetail | None:
+    source = entries if entries is not None else PRODUCT_CATALOG
+    entry = next((e for e in source if e.id == product_id), None)
     if entry is None:
         return None
     economics = derive_economics(entry)
@@ -98,11 +101,14 @@ def get_product_detail(product_id: str) -> ProductDetail | None:
 # ---- Research ------------------------------------------------------------
 
 
-def compute_research_result(options: ResearchOptions) -> ResearchResult:
+def compute_research_result(
+    options: ResearchOptions, entries: list[CatalogEntry] | None = None
+) -> ResearchResult:
     from .schemas import MatchType
 
+    source = entries if entries is not None else PRODUCT_CATALOG
     matched: list[CatalogEntry] = []
-    for entry in PRODUCT_CATALOG:
+    for entry in source:
         economics = derive_economics(entry)
         direction_ok = (
             options.direction == ResearchDirection.BOTH
@@ -165,20 +171,22 @@ def _aggregate(prices: list[int], competitors: list[int], demand: list[int]) -> 
     )
 
 
-def get_market_overview() -> MarketOverview:
+def get_market_overview(entries: list[CatalogEntry] | None = None) -> MarketOverview:
+    source = entries if entries is not None else PRODUCT_CATALOG
     return MarketOverview(
-        japan_avg_price=round(mean(e.japan.price for e in PRODUCT_CATALOG)),
-        china_avg_price=round(mean(e.china.price for e in PRODUCT_CATALOG)),
-        japan_avg_competitors=round(mean(e.japan.competitors for e in PRODUCT_CATALOG)),
-        china_avg_competitors=round(mean(e.china.competitors for e in PRODUCT_CATALOG)),
-        japan_avg_demand=round(mean(e.japan.demand_index for e in PRODUCT_CATALOG)),
-        china_avg_demand=round(mean(e.china.demand_index for e in PRODUCT_CATALOG)),
+        japan_avg_price=round(mean(e.japan.price for e in source)),
+        china_avg_price=round(mean(e.china.price for e in source)),
+        japan_avg_competitors=round(mean(e.japan.competitors for e in source)),
+        china_avg_competitors=round(mean(e.china.competitors for e in source)),
+        japan_avg_demand=round(mean(e.japan.demand_index for e in source)),
+        china_avg_demand=round(mean(e.china.demand_index for e in source)),
     )
 
 
-def get_market_comparison() -> list[MarketComparisonRow]:
+def get_market_comparison(entries: list[CatalogEntry] | None = None) -> list[MarketComparisonRow]:
+    source = entries if entries is not None else PRODUCT_CATALOG
     by_sub: dict[str, list[CatalogEntry]] = {}
-    for entry in PRODUCT_CATALOG:
+    for entry in source:
         by_sub.setdefault(entry.sub_category, []).append(entry)
 
     rows: list[MarketComparisonRow] = []
@@ -244,11 +252,14 @@ def _score_boost(urgency: str) -> int:
     return {"hot": 12, "soon": 8, "watch": 4}.get(urgency, 0)
 
 
-def get_seasonal_opportunities(now: datetime | None = None) -> list[SeasonalOpportunity]:
+def get_seasonal_opportunities(
+    now: datetime | None = None, entries: list[CatalogEntry] | None = None
+) -> list[SeasonalOpportunity]:
     now = now or datetime.now(timezone.utc)
+    source = entries if entries is not None else PRODUCT_CATALOG
     items: list[SeasonalOpportunity] = []
 
-    for entry in PRODUCT_CATALOG:
+    for entry in source:
         if entry.seasonality == Season.ALL_YEAR:
             continue
         peak_month = SEASON_PEAK_MONTH[entry.seasonality]

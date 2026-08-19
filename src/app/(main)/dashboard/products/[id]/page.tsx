@@ -1,4 +1,5 @@
-import { getProductDetail, productCatalog } from "@/lib/research/mock-data";
+import { fetchProductDetail } from "@/lib/research/data-source";
+import { productCatalog } from "@/lib/research/mock-data";
 
 import { AiExplanation } from "./_components/ai-explanation";
 import { MarketComparison } from "./_components/market-comparison";
@@ -6,14 +7,14 @@ import { ProductHeader } from "./_components/product-header";
 import { ProductNotFound } from "./_components/product-not-found";
 import { ProfitSimulator } from "./_components/profit-simulator";
 
-/** モックカタログの全 ID を静的生成する（実データ接続時は動的取得へ移行）。 */
+/** モックカタログの全 ID を静的生成の候補にする（API 有効時は動的レンダリング）。 */
 export function generateStaticParams() {
   return productCatalog.map((entry) => ({ id: entry.id }));
 }
 
 export default async function Page({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const detail = getProductDetail(id);
+  const detail = await fetchProductDetail(id);
 
   if (!detail) {
     return <ProductNotFound />;
