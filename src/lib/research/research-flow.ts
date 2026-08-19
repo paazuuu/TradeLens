@@ -36,17 +36,20 @@ export const defaultResearchOptions: ResearchOptions = {
   minScore: 70,
 };
 
-/** AI 処理の段階（UI-003）。表示順に並ぶ。 */
+/**
+ * AI 処理の段階（UI-003）。表示順に並ぶ。ローカライズ表示名は i18n 辞書の
+ * research.stageNames（stage.id をキー）で解決する。label は言語非依存の英語名。
+ */
 export const researchStages = [
-  { id: "category", label: "Category Analysis", jp: "カテゴリー解析" },
-  { id: "discovery", label: "Product Discovery", jp: "商品候補取得" },
-  { id: "japan", label: "Japan Market", jp: "日本市場調査" },
-  { id: "china", label: "China Market", jp: "中国市場調査" },
-  { id: "matching", label: "Product Matching", jp: "商品マッチング" },
-  { id: "fx", label: "FX Conversion", jp: "為替換算" },
-  { id: "cost", label: "Cost Calculation", jp: "コスト計算" },
-  { id: "seasonality", label: "Seasonality", jp: "季節性分析" },
-  { id: "score", label: "Opportunity Score", jp: "Opportunity Score 計算" },
+  { id: "category", label: "Category Analysis" },
+  { id: "discovery", label: "Product Discovery" },
+  { id: "japan", label: "Japan Market" },
+  { id: "china", label: "China Market" },
+  { id: "matching", label: "Product Matching" },
+  { id: "fx", label: "FX Conversion" },
+  { id: "cost", label: "Cost Calculation" },
+  { id: "seasonality", label: "Seasonality" },
+  { id: "score", label: "Opportunity Score" },
 ] as const;
 
 export type ResearchStageId = (typeof researchStages)[number]["id"];

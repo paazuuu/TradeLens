@@ -1,6 +1,9 @@
+"use client";
+
 import { ArrowLeftRight, Percent, Target, TrendingUp } from "lucide-react";
 
 import { Card, CardAction, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { useI18n } from "@/lib/i18n/use-i18n";
 import { formatJpy, formatPercent } from "@/lib/research/format";
 import type { Opportunity } from "@/lib/research/types";
 
@@ -10,6 +13,9 @@ function averageBy(items: Opportunity[], selector: (item: Opportunity) => number
 }
 
 export function OpportunitySummary({ data }: { data: Opportunity[] }) {
+  const { m } = useI18n();
+  const s = m.opportunities.summary;
+
   const total = data.length;
   const exportCount = data.filter((item) => item.bestDirection === "JP_TO_CN").length;
   const importCount = data.filter((item) => item.bestDirection === "CN_TO_JP").length;
@@ -18,15 +24,20 @@ export function OpportunitySummary({ data }: { data: Opportunity[] }) {
   const avgScore = averageBy(data, (item) => item.score);
 
   const cards = [
-    { title: "有望商品数", value: String(total), hint: `日→中 ${exportCount} ・ 中→日 ${importCount}`, icon: Target },
-    { title: "平均 Opportunity Score", value: avgScore.toFixed(0), hint: "有望方向側の平均", icon: TrendingUp },
+    { title: s.total, value: String(total), hint: s.totalHint(exportCount, importCount), icon: Target },
+    { title: s.avgScore, value: avgScore.toFixed(0), hint: s.avgScoreHint, icon: TrendingUp },
     {
-      title: "平均利益率",
+      title: s.avgMargin,
       value: formatPercent(avgMargin),
-      hint: `平均推定利益 ${formatJpy(Math.round(avgProfit))}`,
+      hint: s.avgMarginHint(formatJpy(Math.round(avgProfit))),
       icon: Percent,
     },
-    { title: "双方向カバー", value: `${exportCount} / ${importCount}`, hint: "日→中 / 中→日", icon: ArrowLeftRight },
+    {
+      title: s.bidirectional,
+      value: `${exportCount} / ${importCount}`,
+      hint: s.bidirectionalHint,
+      icon: ArrowLeftRight,
+    },
   ];
 
   return (

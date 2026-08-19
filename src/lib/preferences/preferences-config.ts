@@ -19,6 +19,7 @@ import {
   SIDEBAR_COLLAPSIBLE_VALUES,
   SIDEBAR_VARIANT_VALUES,
 } from "./layout";
+import { LOCALE_VALUES } from "./locale";
 import { THEME_MODE_VALUES, THEME_PRESET_VALUES } from "./theme";
 
 export type PreferencePersistence = "none" | "client-cookie" | "server-cookie" | "localStorage";
@@ -53,6 +54,13 @@ function defineSSRPreference<
 }
 
 export const PREFERENCE_REGISTRY = {
+  locale: definePreference({
+    values: LOCALE_VALUES,
+    defaultValue: "ja",
+    persistence: "client-cookie",
+    attribute: "data-locale",
+  }),
+
   theme_mode: definePreference({
     values: THEME_MODE_VALUES,
     defaultValue: "light",

@@ -6,6 +6,7 @@ import { ArrowRight, CheckCircle2, RotateCcw } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { useI18n } from "@/lib/i18n/use-i18n";
 import type { ResearchResult } from "@/lib/research/research-flow";
 
 interface ResearchResultViewProps {
@@ -15,11 +16,14 @@ interface ResearchResultViewProps {
 }
 
 export function ResearchResultView({ category, result, onReset }: ResearchResultViewProps) {
+  const { m } = useI18n();
+  const r = m.research;
+
   const stats = [
-    { label: "分析商品数", value: result.productsAnalyzed.toLocaleString() },
-    { label: "有望商品数", value: result.opportunitiesFound.toLocaleString() },
-    { label: "日本 → 中国", value: result.jpToCn.toLocaleString() },
-    { label: "中国 → 日本", value: result.cnToJp.toLocaleString() },
+    { label: r.statsAnalyzed, value: result.productsAnalyzed.toLocaleString() },
+    { label: r.statsFound, value: result.opportunitiesFound.toLocaleString() },
+    { label: r.statsJpToCn, value: result.jpToCn.toLocaleString() },
+    { label: r.statsCnToJp, value: result.cnToJp.toLocaleString() },
   ];
 
   return (
@@ -27,11 +31,14 @@ export function ResearchResultView({ category, result, onReset }: ResearchResult
       <CardHeader>
         <div className="flex items-center gap-2 text-green-700 dark:text-green-300">
           <CheckCircle2 className="size-5" />
-          <CardTitle className="text-foreground">リサーチ完了</CardTitle>
+          <CardTitle className="text-foreground">{r.resultTitle}</CardTitle>
         </div>
         <CardDescription>
-          「{category}」について {result.productsAnalyzed.toLocaleString()} 商品を分析し、
-          {result.opportunitiesFound.toLocaleString()} 件の有望候補が見つかりました。
+          {r.resultDescription(
+            category,
+            result.productsAnalyzed.toLocaleString(),
+            result.opportunitiesFound.toLocaleString(),
+          )}
         </CardDescription>
       </CardHeader>
       <CardContent className="flex flex-col gap-6">
@@ -47,11 +54,11 @@ export function ResearchResultView({ category, result, onReset }: ResearchResult
         <div className="flex flex-wrap justify-end gap-2">
           <Button onClick={onReset} type="button" variant="outline">
             <RotateCcw />
-            条件を変えて再検索
+            {r.reset}
           </Button>
           <Button asChild>
             <Link href="/dashboard/opportunities">
-              有望商品ランキングを見る
+              {r.viewOpportunities}
               <ArrowRight />
             </Link>
           </Button>

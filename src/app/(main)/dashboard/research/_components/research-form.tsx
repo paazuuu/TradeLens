@@ -10,19 +10,8 @@ import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Separator } from "@/components/ui/separator";
 import { Slider } from "@/components/ui/slider";
+import { useI18n } from "@/lib/i18n/use-i18n";
 import type { ResearchDirection, ResearchOptions } from "@/lib/research/research-flow";
-
-const directionOptions: { value: ResearchDirection; label: string }[] = [
-  { value: "BOTH", label: "両方向" },
-  { value: "JP_TO_CN", label: "日本 → 中国" },
-  { value: "CN_TO_JP", label: "中国 → 日本" },
-];
-
-const includeOptions: { key: "includeSeasonal" | "includeOem" | "includeSimilar"; label: string }[] = [
-  { key: "includeSeasonal", label: "季節商品を含める" },
-  { key: "includeOem", label: "OEM候補を含める" },
-  { key: "includeSimilar", label: "類似商品を含める" },
-];
 
 interface ResearchFormProps {
   options: ResearchOptions;
@@ -33,7 +22,21 @@ interface ResearchFormProps {
 const exampleCategories = ["キャンプ用品", "美容用品", "キッチン用品", "ペット用品", "文房具"];
 
 export function ResearchForm({ options, onChange, onSubmit }: ResearchFormProps) {
+  const { m } = useI18n();
+  const r = m.research;
   const canSubmit = options.category.trim().length > 0;
+
+  const directionOptions: { value: ResearchDirection; label: string }[] = [
+    { value: "BOTH", label: r.directionBoth },
+    { value: "JP_TO_CN", label: m.labels.direction.JP_TO_CN },
+    { value: "CN_TO_JP", label: m.labels.direction.CN_TO_JP },
+  ];
+
+  const includeOptions: { key: "includeSeasonal" | "includeOem" | "includeSimilar"; label: string }[] = [
+    { key: "includeSeasonal", label: r.includeSeasonal },
+    { key: "includeOem", label: r.includeOem },
+    { key: "includeSimilar", label: r.includeSimilar },
+  ];
 
   function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -43,20 +46,18 @@ export function ResearchForm({ options, onChange, onSubmit }: ResearchFormProps)
   return (
     <Card>
       <CardHeader>
-        <CardTitle>AI 商品リサーチ</CardTitle>
-        <CardDescription>
-          カテゴリーを入力すると、AI が日本市場と中国市場を横断して越境の商機を調査します。
-        </CardDescription>
+        <CardTitle>{r.formTitle}</CardTitle>
+        <CardDescription>{r.formDescription}</CardDescription>
       </CardHeader>
       <CardContent>
         <form className="flex flex-col gap-6" onSubmit={handleSubmit}>
           <div className="flex flex-col gap-2">
-            <Label htmlFor="research-category">何を探しますか？</Label>
+            <Label htmlFor="research-category">{r.categoryLabel}</Label>
             <Input
               autoComplete="off"
               id="research-category"
               onChange={(event) => onChange({ ...options, category: event.target.value })}
-              placeholder="例: キャンプ用品"
+              placeholder={r.categoryPlaceholder}
               value={options.category}
             />
             <div className="flex flex-wrap gap-1.5 pt-1">
@@ -78,7 +79,7 @@ export function ResearchForm({ options, onChange, onSubmit }: ResearchFormProps)
 
           <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
             <fieldset className="flex flex-col gap-3">
-              <legend className="mb-1 font-medium text-sm">対象の商流方向</legend>
+              <legend className="mb-1 font-medium text-sm">{r.directionLegend}</legend>
               <RadioGroup
                 className="gap-2"
                 onValueChange={(value) => onChange({ ...options, direction: value as ResearchDirection })}
@@ -96,7 +97,7 @@ export function ResearchForm({ options, onChange, onSubmit }: ResearchFormProps)
             </fieldset>
 
             <fieldset className="flex flex-col gap-3">
-              <legend className="mb-1 font-medium text-sm">調査対象に含めるもの</legend>
+              <legend className="mb-1 font-medium text-sm">{r.includeLegend}</legend>
               {includeOptions.map((option) => (
                 <div className="flex items-center gap-2" key={option.key}>
                   <Checkbox
@@ -117,7 +118,7 @@ export function ResearchForm({ options, onChange, onSubmit }: ResearchFormProps)
           <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
             <div className="flex flex-col gap-3">
               <div className="flex items-center justify-between">
-                <Label htmlFor="min-margin">最低利益率</Label>
+                <Label htmlFor="min-margin">{r.minMargin}</Label>
                 <span className="font-medium text-sm tabular-nums">{options.minMargin}%</span>
               </div>
               <Slider
@@ -132,7 +133,7 @@ export function ResearchForm({ options, onChange, onSubmit }: ResearchFormProps)
 
             <div className="flex flex-col gap-3">
               <div className="flex items-center justify-between">
-                <Label htmlFor="min-score">最低 Opportunity Score</Label>
+                <Label htmlFor="min-score">{r.minScore}</Label>
                 <span className="font-medium text-sm tabular-nums">{options.minScore}</span>
               </div>
               <Slider
@@ -149,7 +150,7 @@ export function ResearchForm({ options, onChange, onSubmit }: ResearchFormProps)
           <div className="flex justify-end">
             <Button disabled={!canSubmit} type="submit">
               <Sparkles />
-              AI リサーチ開始
+              {r.start}
             </Button>
           </div>
         </form>

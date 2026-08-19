@@ -68,3 +68,104 @@ export interface Opportunity {
   /** マッチ信頼度（0〜100%）。 */
   matchConfidence: number;
 }
+
+/** 商品サイズ帯。国際送料・梱包費の算定に用いる。 */
+export type SizeTier = "S" | "M" | "L";
+
+/** 片方の市場スナップショット（UI-005 の日中比較）。 */
+export interface MarketSnapshot {
+  /** 代表販売価格（円）。 */
+  price: number;
+  /** 競合出品者数。 */
+  competitors: number;
+  /** 需要指数（0〜100）。 */
+  demandIndex: number;
+  /** レビュー数。 */
+  reviewCount: number;
+}
+
+/** 総コストの内訳（円、セクション 10）。 */
+export interface CostBreakdown {
+  purchasePrice: number;
+  intlShipping: number;
+  domesticShipping: number;
+  importTax: number;
+  platformFee: number;
+  packaging: number;
+  other: number;
+}
+
+/** コストベースの利益指標（Profit Engine の出力、セクション 10）。 */
+export interface Economics {
+  sellPrice: number;
+  cost: CostBreakdown;
+  totalCost: number;
+  estimatedProfit: number;
+  marginRate: number;
+  roi: number;
+  /** 損益分岐となる販売価格（＝総コスト）。 */
+  breakEvenSellPrice: number;
+}
+
+/** AI 有望理由コード（セクション 10 原則・UI-005 の AI 説明）。 */
+export type ReasonCode =
+  | "highMargin"
+  | "priceGap"
+  | "lowCompetition"
+  | "demandRising"
+  | "seasonalPeak"
+  | "stableSupply"
+  | "highRisk";
+
+/** データ信頼度の内訳（セクション 95）。 */
+export interface ConfidenceBreakdown {
+  match: number;
+  price: number;
+  profit: number;
+}
+
+/**
+ * 商品カタログの生データ（Mock）。市場スナップショットとサイズ帯を持ち、
+ * ここから Opportunity 要約と ProductDetail を決定論的に導出する。
+ */
+export interface ProductCatalogEntry {
+  id: string;
+  name: string;
+  brand: string;
+  category: string;
+  subCategory: string;
+  model: string;
+  imageUrl?: string;
+  sizeTier: SizeTier;
+  bestDirection: TradeDirection;
+  seasonality: Season;
+  risk: RiskLevel;
+  matchType: MatchType;
+  matchConfidence: number;
+  score: number;
+  japan: MarketSnapshot;
+  china: MarketSnapshot;
+}
+
+/** UI-005 が表示する 1 商品の詳細。 */
+export interface ProductDetail {
+  id: string;
+  name: string;
+  brand: string;
+  category: string;
+  subCategory: string;
+  model: string;
+  imageUrl?: string;
+  bestDirection: TradeDirection;
+  seasonality: Season;
+  risk: RiskLevel;
+  matchType: MatchType;
+  matchConfidence: number;
+  score: number;
+  japan: MarketSnapshot;
+  china: MarketSnapshot;
+  priceGapRate: number;
+  economics: Economics;
+  reasons: ReasonCode[];
+  confidence: ConfidenceBreakdown;
+}

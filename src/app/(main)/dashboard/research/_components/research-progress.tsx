@@ -4,6 +4,7 @@ import { Check, Loader2 } from "lucide-react";
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
+import { useI18n } from "@/lib/i18n/use-i18n";
 import { researchStages } from "@/lib/research/research-flow";
 
 interface ResearchProgressProps {
@@ -28,19 +29,20 @@ function StageMarkerIcon({ state }: { state: StageState }) {
 }
 
 export function ResearchProgress({ category, completedCount }: ResearchProgressProps) {
+  const { m } = useI18n();
   const total = researchStages.length;
   const percent = Math.round((completedCount / total) * 100);
 
   return (
     <Card>
       <CardHeader>
-        <CardTitle>リサーチ実行中</CardTitle>
-        <CardDescription>「{category}」を分析しています。AI が各段階を順に処理します。</CardDescription>
+        <CardTitle>{m.research.runningTitle}</CardTitle>
+        <CardDescription>{m.research.runningDescription(category)}</CardDescription>
       </CardHeader>
       <CardContent className="flex flex-col gap-5">
         <div className="flex flex-col gap-2">
           <div className="flex items-center justify-between text-sm">
-            <span className="text-muted-foreground">進捗</span>
+            <span className="text-muted-foreground">{m.research.progress}</span>
             <span className="font-medium tabular-nums">{percent}%</span>
           </div>
           <Progress value={percent} />
@@ -61,7 +63,7 @@ export function ResearchProgress({ category, completedCount }: ResearchProgressP
                 </span>
                 <div className="flex flex-col">
                   <span className={isReached ? "text-sm" : "text-muted-foreground text-sm"}>{stage.label}</span>
-                  <span className="text-muted-foreground text-xs">{stage.jp}</span>
+                  <span className="text-muted-foreground text-xs">{m.research.stageNames[stage.id]}</span>
                 </div>
               </li>
             );

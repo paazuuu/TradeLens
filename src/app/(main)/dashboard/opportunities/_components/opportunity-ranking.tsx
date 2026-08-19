@@ -10,17 +10,21 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { dataTableFeatures } from "@/lib/data-table-features";
+import { useI18n } from "@/lib/i18n/use-i18n";
 import type { Opportunity, TradeDirection } from "@/lib/research/types";
 
-import { opportunityColumns } from "./columns";
-
-const directionFilters: { value: "All" | TradeDirection; label: string }[] = [
-  { value: "All", label: "すべて" },
-  { value: "JP_TO_CN", label: "日本 → 中国" },
-  { value: "CN_TO_JP", label: "中国 → 日本" },
-];
+import { getOpportunityColumns } from "./columns";
 
 export function OpportunityRanking({ data }: { data: Opportunity[] }) {
+  const { m } = useI18n();
+  const columns = React.useMemo(() => getOpportunityColumns(m), [m]);
+
+  const directionFilters: { value: "All" | TradeDirection; label: string }[] = [
+    { value: "All", label: m.common.all },
+    { value: "JP_TO_CN", label: m.labels.direction.JP_TO_CN },
+    { value: "CN_TO_JP", label: m.labels.direction.CN_TO_JP },
+  ];
+
   const [sorting, setSorting] = React.useState<SortingState>([{ id: "score", desc: true }]);
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([]);
   const [pagination, setPagination] = React.useState<PaginationState>({ pageIndex: 0, pageSize: 10 });
@@ -28,7 +32,7 @@ export function OpportunityRanking({ data }: { data: Opportunity[] }) {
   const table = useTable({
     features: dataTableFeatures,
     data,
-    columns: opportunityColumns,
+    columns,
     state: { sorting, columnFilters, pagination },
     getRowId: (row) => row.id,
     onSortingChange: setSorting,
@@ -43,7 +47,7 @@ export function OpportunityRanking({ data }: { data: Opportunity[] }) {
   return (
     <Card>
       <CardHeader className="gap-2">
-        <CardTitle className="text-base">Opportunity Ranking</CardTitle>
+        <CardTitle className="text-base">{m.opportunities.rankingTitle}</CardTitle>
         <div className="flex flex-wrap items-center justify-between gap-2">
           <ToggleGroup
             className="bg-muted p-0.75 text-muted-foreground **:data-[slot=toggle-group-item]:rounded-md **:data-[slot=toggle-group-item]:border **:data-[slot=toggle-group-item]:border-transparent **:data-[slot=toggle-group-item]:text-foreground/60 **:data-[slot=toggle-group-item]:hover:text-foreground [&_[data-slot=toggle-group-item][data-state=on]]:bg-background [&_[data-slot=toggle-group-item][data-state=on]]:text-foreground [&_[data-slot=toggle-group-item][data-state=on]]:shadow-sm dark:[&_[data-slot=toggle-group-item][data-state=on]]:border-input dark:[&_[data-slot=toggle-group-item][data-state=on]]:bg-input/30"
@@ -70,7 +74,7 @@ export function OpportunityRanking({ data }: { data: Opportunity[] }) {
             onClick={() => table.getColumn("score")?.toggleSorting(table.getColumn("score")?.getIsSorted() === "desc")}
           >
             <ArrowUpDown />
-            Score順
+            {m.opportunities.sortByScore}
           </Button>
         </div>
       </CardHeader>
@@ -103,7 +107,7 @@ export function OpportunityRanking({ data }: { data: Opportunity[] }) {
               ) : (
                 <TableRow>
                   <TableCell className="h-24 text-center" colSpan={table.getVisibleLeafColumns().length}>
-                    該当する商機がありません。
+                    {m.opportunities.empty}
                   </TableCell>
                 </TableRow>
               )}
@@ -111,7 +115,7 @@ export function OpportunityRanking({ data }: { data: Opportunity[] }) {
           </Table>
         </div>
 
-        <p className="px-4 text-muted-foreground text-sm">{visibleCount} 件の商機を表示中</p>
+        <p className="px-4 text-muted-foreground text-sm">{m.opportunities.showingCount(visibleCount)}</p>
       </CardContent>
     </Card>
   );
