@@ -1,6 +1,7 @@
 import {
   BarChart3,
   Bell,
+  BellRing,
   Fingerprint,
   Globe2,
   LayoutDashboard,
@@ -114,6 +115,12 @@ export const sidebarItems: NavGroup[] = [
         title: "Watchlists",
         url: "/dashboard/watchlists",
         icon: Bell,
+      },
+      {
+        id: "alerts",
+        title: "Alerts",
+        url: "/dashboard/alerts",
+        icon: BellRing,
       },
       {
         id: "profile",
