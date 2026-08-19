@@ -20,24 +20,30 @@ import os
 import uuid
 from contextlib import asynccontextmanager
 
-from fastapi import Depends, FastAPI, HTTPException, Query
+from fastapi import Depends, FastAPI, Header, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
+from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from . import repository, services
+from . import auth, repository, services
 from .agents import category_agent, product_discovery
 from .agents.schemas import CategoryTree, DecomposeRequest, DiscoveryRequest, DiscoveryResponse
 from .db import SessionLocal, get_session, init_db
+from .models import User
 from .schemas import (
+    LoginRequest,
     MarketsResponse,
     Opportunity,
     ProductDetail,
     ProfitSimulateRequest,
     ProfitSimulateResponse,
+    RegisterRequest,
     ResearchJob,
     ResearchOptions,
     SeasonalOpportunity,
+    TokenResponse,
     TradeDirection,
+    UserOut,
 )
 from .seed import seed_database
 
@@ -75,6 +81,60 @@ _research_jobs: dict[str, ResearchJob] = {}
 @app.get("/health")
 def health() -> dict[str, str]:
     return {"status": "ok"}
+
+
+# ---- 認証（STEP 19）。Email/Password + JWT。 ----
+
+
+def _current_user(
+    authorization: str | None = Header(default=None), session: Session = Depends(get_session)
+) -> User:
+    if not authorization or not authorization.lower().startswith("bearer "):
+        raise HTTPException(status_code=401, detail="missing bearer token")
+    user_id = auth.decode_token(authorization.split(" ", 1)[1].strip())
+    if user_id is None:
+        raise HTTPException(status_code=401, detail="invalid or expired token")
+    user = session.get(User, user_id)
+    if user is None:
+        raise HTTPException(status_code=401, detail="user not found")
+    return user
+
+
+@app.post("/auth/register", response_model=TokenResponse, status_code=201)
+def register(req: RegisterRequest, session: Session = Depends(get_session)) -> TokenResponse:
+    email = req.email.strip().lower()
+    if not email or "@" not in email:
+        raise HTTPException(status_code=400, detail="invalid email")
+    if len(req.password) < 6:
+        raise HTTPException(status_code=400, detail="password must be at least 6 characters")
+    if session.scalar(select(User).where(User.email == email)) is not None:
+        raise HTTPException(status_code=409, detail="email already registered")
+
+    user = User(
+        id=f"user-{uuid.uuid4().hex[:12]}",
+        email=email,
+        display_name=req.display_name,
+        password_hash=auth.hash_password(req.password),
+    )
+    session.add(user)
+    session.commit()
+    token = auth.create_token(user.id)
+    return TokenResponse(access_token=token, user=UserOut(id=user.id, email=user.email, display_name=user.display_name))
+
+
+@app.post("/auth/login", response_model=TokenResponse)
+def login(req: LoginRequest, session: Session = Depends(get_session)) -> TokenResponse:
+    email = req.email.strip().lower()
+    user = session.scalar(select(User).where(User.email == email))
+    if user is None or not auth.verify_password(req.password, user.password_hash):
+        raise HTTPException(status_code=401, detail="invalid email or password")
+    token = auth.create_token(user.id)
+    return TokenResponse(access_token=token, user=UserOut(id=user.id, email=user.email, display_name=user.display_name))
+
+
+@app.get("/auth/me", response_model=UserOut)
+def me(user: User = Depends(_current_user)) -> UserOut:
+    return UserOut(id=user.id, email=user.email, display_name=user.display_name)
 
 
 @app.post("/research", response_model=ResearchJob)

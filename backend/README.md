@@ -137,7 +137,27 @@ export ANTHROPIC_MODEL="claude-opus-5"   # 任意（既定 claude-opus-5）
 スコア・商流方向は DB の生シグナル（価格・競合・需要・リスク等）から計算するため、
 `products.score` などの投入値は生の属性、`opportunities` はエンジンの計算結果を保持する。
 
+## 認証（STEP 19）
+
+Email/Password + JWT。パスワードは PBKDF2-HMAC-SHA256（標準ライブラリ）でハッシュ化する。
+
+| メソッド | パス | 説明 |
+|---|---|---|
+| POST | `/auth/register` | 新規登録（トークンを返す） |
+| POST | `/auth/login` | ログイン（トークンを返す） |
+| GET | `/auth/me` | 現在のユーザー（`Authorization: Bearer <token>`） |
+
+```bash
+export AUTH_SECRET="<本番では必ずランダムな秘密鍵を設定>"
+export AUTH_TOKEN_TTL_HOURS=72   # 任意（既定 72）
+```
+
+フロントは `src/lib/api/auth.ts` でトークンを localStorage に保持し、ログイン/登録
+フォームから呼び出す。`NEXT_PUBLIC_API_URL` 未設定時はデモモードとして
+ダッシュボードへ遷移する。
+
 ## 今後
 
 - Product Discovery の結果を価格取得層・DB（products / market_prices）へ接続
 - 為替 `exchange_rates` の変動から fx_stability を実データ化
+- ルート保護（Next.js middleware）とアカウント表示/ログアウトの結線

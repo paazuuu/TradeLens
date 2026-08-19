@@ -29,6 +29,8 @@ class User(Base, TimestampMixin):
     id: Mapped[str] = mapped_column(String(64), primary_key=True)
     email: Mapped[str] = mapped_column(String(320), unique=True, nullable=False)
     display_name: Mapped[str | None] = mapped_column(String(200))
+    # PBKDF2 ハッシュ（"pbkdf2_sha256$iterations$salt$hash"）。認証（STEP 19）。
+    password_hash: Mapped[str | None] = mapped_column(String(255))
 
 
 class Category(Base, TimestampMixin):

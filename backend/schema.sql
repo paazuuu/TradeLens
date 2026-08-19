@@ -24,6 +24,7 @@ CREATE TABLE users (
 	id VARCHAR(64) NOT NULL, 
 	email VARCHAR(320) NOT NULL, 
 	display_name VARCHAR(200), 
+	password_hash VARCHAR(255), 
 	created_at TIMESTAMP WITH TIME ZONE NOT NULL, 
 	PRIMARY KEY (id), 
 	UNIQUE (email)

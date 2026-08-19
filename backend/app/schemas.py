@@ -215,6 +215,29 @@ class MarketsResponse(CamelModel):
     comparison: list[MarketComparisonRow]
 
 
+class RegisterRequest(CamelModel):
+    email: str
+    password: str
+    display_name: str | None = None
+
+
+class LoginRequest(CamelModel):
+    email: str
+    password: str
+
+
+class UserOut(CamelModel):
+    id: str
+    email: str
+    display_name: str | None = None
+
+
+class TokenResponse(CamelModel):
+    access_token: str
+    token_type: str = "bearer"
+    user: UserOut
+
+
 class SeasonalOpportunity(CamelModel):
     id: str
     name: str
