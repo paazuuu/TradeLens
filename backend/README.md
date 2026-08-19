@@ -42,20 +42,52 @@ uvicorn app.main:app --reload --port 8000
 
 レスポンスは camelCase で返し、フロントの `src/lib/research/types.ts` と対応する。
 
+## データベース（STEP 6）
+
+PostgreSQL を既定とし、`DATABASE_URL` 未設定時はローカル開発用に SQLite へフォールバックする。
+モデルは方言非依存の型で定義しているため、両方で動作する（セクション 73）。
+
+```bash
+# PostgreSQL を使う場合（例）
+export DATABASE_URL="postgresql+psycopg://user:pass@localhost:5432/crossborder"
+
+# テーブル作成 + モックデータ投入
+python -m app.initdb
+
+# テーブル作成のみ
+python -m app.initdb --schema-only
+
+# 参照用の PostgreSQL DDL を backend/schema.sql に生成
+python scripts/dump_schema.py
+```
+
+初期テーブル（セクション 73）: `users`, `categories`, `products`, `product_matches`,
+`market_prices`, `exchange_rates`, `cost_rules`, `profit_calculations`, `opportunities`,
+`seasonal_profiles`, `research_jobs`, `watchlists`, `alerts`。
+
+外部ソース由来のデータには `source` / `source_url` / `retrieved_at` を保持し、
+AI 生成値と取得値を区別できるようにしている（原則: セクション 94）。
+
 ## 構成
 
 ```text
-backend/app/
-├── main.py       # FastAPI アプリ・ルーティング・CORS
-├── schemas.py    # Pydantic モデル（TS の types.ts に対応）
-├── catalog.py    # モック商品カタログ（mock-data.ts に対応）
-├── economics.py  # Profit Engine（economics.ts に対応）
-└── services.py   # 集計・導出ロジック（markets/seasonal/research）
+backend/
+├── app/
+│   ├── main.py       # FastAPI アプリ・ルーティング・CORS
+│   ├── schemas.py    # Pydantic モデル（TS の types.ts に対応）
+│   ├── catalog.py    # モック商品カタログ（mock-data.ts に対応）
+│   ├── economics.py  # Profit Engine（economics.ts に対応）
+│   ├── services.py   # 集計・導出ロジック（markets/seasonal/research）
+│   ├── db.py         # DB 接続・セッション（SQLAlchemy）
+│   ├── models.py     # ORM モデル（セクション 73）
+│   ├── seed.py       # モックデータ投入
+│   └── initdb.py     # 初期化 CLI
+├── scripts/dump_schema.py  # PostgreSQL DDL 生成
+└── schema.sql        # 生成された参照用 DDL
 ```
 
-## 今後（STEP 6 以降）
+## 今後（STEP 7 以降）
 
-- STEP 6: PostgreSQL 導入とスキーマ（`products`, `market_prices`, `opportunities` ほか、セクション 73）
 - STEP 7-8: Category Agent / Product Discovery（AI 層）
 - STEP 9-14: Matching / Pricing / Profit / Opportunity / Direction / Seasonal Engine の実データ化
-- STEP 15: フロントの `src/lib/research/*` を本 API 呼び出しへ差し替え
+- STEP 15: フロントの `src/lib/research/*` を本 API 呼び出しへ差し替え（API を DB バックエンドへ）
