@@ -26,6 +26,7 @@ export interface Messages {
     zh: string;
   };
   pageHeaders: {
+    dashboard: { title: string; description: string };
     opportunities: { title: string; description: string };
     research: { title: string; description: string };
     productDetail: { title: string; description: string };
@@ -33,6 +34,23 @@ export interface Messages {
     markets: { title: string; description: string };
     seasonal: { title: string; description: string };
     analytics: { title: string; description: string };
+  };
+  dashboard: {
+    kpi: {
+      totalProducts: string;
+      promising: string;
+      jpToCn: string;
+      cnToJp: string;
+      seasonal: string;
+      avgMargin: string;
+    };
+    topOpportunities: string;
+    topPriceGap: string;
+    topMargin: string;
+    topDemand: string;
+    topSeasonal: string;
+    viewAll: string;
+    demandIndex: string;
   };
   opportunities: {
     rankingTitle: string;
@@ -183,6 +201,10 @@ const ja: Messages = {
   },
   language: { label: "言語", ja: "日本語", zh: "中文" },
   pageHeaders: {
+    dashboard: {
+      title: "Dashboard",
+      description: "今日どの商品に商機があるかを一画面で把握します。有望商品・商流方向・利益機会を俯瞰できます。",
+    },
     opportunities: {
       title: "Opportunities",
       description:
@@ -213,6 +235,23 @@ const ja: Messages = {
       title: "Analytics",
       description: "商流方向・カテゴリー・利益率・推定利益の分布を可視化します。",
     },
+  },
+  dashboard: {
+    kpi: {
+      totalProducts: "調査商品数",
+      promising: "有望商品数",
+      jpToCn: "日本 → 中国",
+      cnToJp: "中国 → 日本",
+      seasonal: "季節商品",
+      avgMargin: "平均利益率",
+    },
+    topOpportunities: "🔥 今おすすめの商機",
+    topPriceGap: "価格差 Top",
+    topMargin: "利益率 Top",
+    topDemand: "需要上昇 Top",
+    topSeasonal: "季節先取り Top",
+    viewAll: "すべて見る",
+    demandIndex: "需要指数",
   },
   opportunities: {
     rankingTitle: "Opportunity Ranking",
@@ -379,6 +418,10 @@ const zh: Messages = {
   common: { all: "全部", viewRanking: "查看排行", dataConfidence: "数据可信度", high: "高", medium: "中", low: "低" },
   language: { label: "语言", ja: "日语", zh: "中文" },
   pageHeaders: {
+    dashboard: {
+      title: "仪表盘",
+      description: "在一屏内掌握今天哪些商品有商机。俯瞰优质商品、贸易方向与利润机会。",
+    },
     opportunities: {
       title: "商机排行",
       description: "按 Opportunity Score 排序的优质商品排行。不仅看价差，还结合全成本估算利润与贸易方向进行评估。",
@@ -407,6 +450,23 @@ const zh: Messages = {
       title: "数据分析",
       description: "可视化贸易方向、品类、利润率与预估利润的分布。",
     },
+  },
+  dashboard: {
+    kpi: {
+      totalProducts: "调研商品数",
+      promising: "优质商品数",
+      jpToCn: "日本 → 中国",
+      cnToJp: "中国 → 日本",
+      seasonal: "季节商品",
+      avgMargin: "平均利润率",
+    },
+    topOpportunities: "🔥 今日推荐商机",
+    topPriceGap: "价差 Top",
+    topMargin: "利润率 Top",
+    topDemand: "需求上升 Top",
+    topSeasonal: "季节前瞻 Top",
+    viewAll: "查看全部",
+    demandIndex: "需求指数",
   },
   opportunities: {
     rankingTitle: "商机排行",
