@@ -25,17 +25,19 @@ from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from . import auth, ingest, matching_engine, repository, services
+from . import auth, ingest, matching_engine, monitoring, repository, scheduler, services
 from .agents import category_agent, product_discovery
 from .agents.schemas import CategoryTree, DecomposeRequest, DiscoveryRequest, DiscoveryResponse
 from .db import SessionLocal, get_session, init_db
-from .models import User, Watchlist
+from .models import Alert, User, Watchlist
 from .schemas import (
+    AlertOut,
     IngestResponse,
     LoginRequest,
     MarketsResponse,
     MatchRequest,
     MatchResult,
+    MonitoringResult,
     Opportunity,
     ProductDetail,
     ProductImport,
@@ -61,7 +63,12 @@ async def lifespan(_: FastAPI):
     with SessionLocal() as session:
         if repository.catalog_is_empty(session):
             seed_database(session)
-    yield
+    # 自動監視スケジューラ（MONITOR_INTERVAL_SECONDS>0 のときのみ）。
+    scheduler.start_scheduler()
+    try:
+        yield
+    finally:
+        scheduler.stop_scheduler()
 
 
 app = FastAPI(
@@ -187,6 +194,35 @@ def delete_watchlist(
     session.delete(item)
     session.commit()
     return Response(status_code=204)
+
+
+# ---- 自動監視・アラート（STEP 17-18）。 ----
+
+
+@app.post("/monitoring/run", response_model=MonitoringResult)
+def monitoring_run(session: Session = Depends(get_session)) -> MonitoringResult:
+    # Worker/cron から呼ぶ想定。全ユーザーの Watchlist を再評価しアラートを生成する。
+    result = monitoring.run_monitoring(session)
+    return MonitoringResult(watched_users=result["watched_users"], alerts_created=result["alerts_created"])
+
+
+@app.get("/alerts", response_model=list[AlertOut])
+def list_alerts(user: User = Depends(_current_user), session: Session = Depends(get_session)) -> list[AlertOut]:
+    items = session.scalars(
+        select(Alert).where(Alert.user_id == user.id).order_by(Alert.created_at.desc())
+    ).all()
+    return [
+        AlertOut(
+            id=a.id,
+            kind=a.kind,
+            product_id=a.product_id,
+            message=a.message,
+            payload=a.payload,
+            created_at=a.created_at,
+            read_at=a.read_at,
+        )
+        for a in items
+    ]
 
 
 @app.post("/research", response_model=ResearchJob)

@@ -152,6 +152,24 @@ export ANTHROPIC_MODEL="claude-opus-5"   # 任意（既定 claude-opus-5）
 - 中国価格（CNY）は DB の為替レートで円へ正規化し、原価・通貨・取得日時・取得元を保存する（原則: セクション 94）。
 - データソースは `app/datasources/`（`DataSource` プロトコル + `MockDataSource`）で差し替え可能。
 
+## 自動監視・アラート（STEP 17-18）
+
+Watchlist を再評価し、閾値を超えた商機（Score）や季節需要接近を `alerts` テーブルへ記録する。
+同一ユーザー・商品・種別の未読アラートは重複作成しない。
+
+| メソッド | パス | 説明 |
+|---|---|---|
+| POST | `/monitoring/run` | 全ユーザーの Watchlist を再評価しアラート生成（Worker/cron 用） |
+| GET | `/alerts` | 現在ユーザーの保存済みアラート（要認証） |
+
+定期実行は環境変数で有効化する（既定は無効）。本番では Worker/cron を推奨。
+
+```bash
+export MONITOR_INTERVAL_SECONDS=3600   # >0 で内蔵スケジューラ有効（既定 0 = 無効）
+export ALERT_SCORE=60                  # 商機アラートの Score 閾値
+export SEASON_ALERT_DAYS=60            # 季節アラートを出す残り日数
+```
+
 ## 認証（STEP 19）
 
 Email/Password + JWT。パスワードは PBKDF2-HMAC-SHA256（標準ライブラリ）でハッシュ化する。

@@ -5,6 +5,7 @@
 
 from __future__ import annotations
 
+from datetime import datetime
 from enum import Enum
 
 from pydantic import BaseModel, ConfigDict
@@ -268,6 +269,21 @@ class IngestResponse(CamelModel):
     imported: int
     products: int
     market_prices: int
+
+
+class AlertOut(CamelModel):
+    id: int
+    kind: str  # opportunity / season
+    product_id: str | None = None
+    message: str | None = None
+    payload: dict | None = None
+    created_at: datetime
+    read_at: datetime | None = None
+
+
+class MonitoringResult(CamelModel):
+    watched_users: int
+    alerts_created: int
 
 
 class WatchlistCreate(CamelModel):
