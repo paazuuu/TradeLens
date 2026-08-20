@@ -11,7 +11,7 @@ from sqlalchemy.orm import Session, selectinload
 
 from .catalog import CatalogEntry
 from .economics import DEFAULT_COST_PARAMS, CostParams
-from .models import CostRule, Product
+from .models import AppSetting, CostRule, Product
 from .schemas import MarketSnapshot, MatchType, RiskLevel, Season, SizeTier, TradeDirection
 
 
@@ -76,7 +76,23 @@ def load_cost_params(session: Session) -> CostParams:
 
     サイズ帯別の送料・梱包費と、共通の税率・手数料率を組み立てる。
     行が無ければ既定パラメータを返す。
+
+    グローバル設定（app_settings）が存在する場合はそれを優先し、送料は全サイズ帯へ
+    一律適用する（UI-012 の簡易設定に合わせる）。梱包費は既定の帯別値を維持する。
     """
+    setting = session.get(AppSetting, 1)
+    if setting is not None:
+        flat_intl = {tier: setting.intl_shipping for tier in SizeTier}
+        flat_domestic = {tier: setting.domestic_shipping for tier in SizeTier}
+        return CostParams(
+            intl_shipping=flat_intl,
+            domestic_shipping=flat_domestic,
+            packaging=dict(DEFAULT_COST_PARAMS.packaging),
+            import_tax_rate=setting.import_tax_rate / 100,
+            platform_fee_rate=setting.platform_fee_rate / 100,
+            other_rate=DEFAULT_COST_PARAMS.other_rate,
+        )
+
     rules = session.scalars(select(CostRule).where(CostRule.size_tier.is_not(None))).all()
     if not rules:
         return DEFAULT_COST_PARAMS

@@ -339,6 +339,16 @@ class IngestResponse(CamelModel):
     market_prices: int
 
 
+class SettingsOut(CamelModel):
+    exchange_rate: float
+    intl_shipping: int
+    domestic_shipping: int
+    import_tax_rate: float
+    platform_fee_rate: float
+    min_margin: float
+    min_score: int
+
+
 class AlertOut(CamelModel):
     id: int
     kind: str  # opportunity / season

@@ -10,6 +10,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { NativeSelect, NativeSelectOption } from "@/components/ui/native-select";
 import { Switch } from "@/components/ui/switch";
+import { getSettings, putSettings, type SettingsPayload } from "@/lib/api/settings";
 import { useI18n } from "@/lib/i18n/use-i18n";
 import { getLocalStorageValue, setLocalStorageValue } from "@/lib/local-storage.client";
 import {
@@ -22,6 +23,18 @@ import {
 
 type NumberKey = Exclude<keyof UserSettings, "emailAlerts" | "monitorFrequency">;
 
+function toPayload(settings: UserSettings): SettingsPayload {
+  return {
+    exchangeRate: settings.exchangeRate,
+    intlShipping: settings.intlShipping,
+    domesticShipping: settings.domesticShipping,
+    importTaxRate: settings.importTaxRate,
+    platformFeeRate: settings.platformFeeRate,
+    minMargin: settings.minMargin,
+    minScore: settings.minScore,
+  };
+}
+
 export function SettingsForm() {
   const { m } = useI18n();
   const s = m.settings;
@@ -29,9 +42,18 @@ export function SettingsForm() {
   const [settings, setSettings] = React.useState<UserSettings>(DEFAULT_SETTINGS);
   const [savedAt, setSavedAt] = React.useState<number | null>(null);
 
-  // 初回マウント時に localStorage から復元する（SSR 既定値との差分は許容）。
+  // 初回マウント: localStorage を基準にし、API があれば数値項目を上書きする。
   React.useEffect(() => {
-    setSettings(parseSettings(getLocalStorageValue(SETTINGS_STORAGE_KEY)));
+    let cancelled = false;
+    const local = parseSettings(getLocalStorageValue(SETTINGS_STORAGE_KEY));
+    setSettings(local);
+    void getSettings().then((remote) => {
+      if (cancelled || remote === null) return;
+      setSettings((prev) => ({ ...prev, ...remote }));
+    });
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   function updateNumber(key: NumberKey, raw: string) {
@@ -41,6 +63,8 @@ export function SettingsForm() {
 
   function handleSave() {
     setLocalStorageValue(SETTINGS_STORAGE_KEY, JSON.stringify(settings));
+    // 認証済みなら DB のグローバル設定にも反映（計算に反映される）。
+    void putSettings(toPayload(settings));
     setSavedAt(Date.now());
   }
 

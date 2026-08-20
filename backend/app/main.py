@@ -29,12 +29,13 @@ from . import auth, ingest, insights, matching_engine, monitoring, repository, s
 from .agents import category_agent, product_discovery
 from .agents.schemas import CategoryTree, DecomposeRequest, DiscoveryRequest, DiscoveryResponse
 from .db import SessionLocal, get_session, init_db
-from .models import Alert, User, Watchlist
+from .models import Alert, AppSetting, User, Watchlist
 from .schemas import (
     AlertOut,
     AnalyticsResponse,
     DashboardResponse,
     IngestResponse,
+    SettingsOut,
     LoginRequest,
     MarketsResponse,
     MatchRequest,
@@ -206,6 +207,58 @@ def monitoring_run(session: Session = Depends(get_session)) -> MonitoringResult:
     # Worker/cron から呼ぶ想定。全ユーザーの Watchlist を再評価しアラートを生成する。
     result = monitoring.run_monitoring(session)
     return MonitoringResult(watched_users=result["watched_users"], alerts_created=result["alerts_created"])
+
+
+_DEFAULT_SETTINGS = SettingsOut(
+    exchange_rate=21.0,
+    intl_shipping=1600,
+    domestic_shipping=700,
+    import_tax_rate=5.0,
+    platform_fee_rate=10.0,
+    min_margin=20.0,
+    min_score=70,
+)
+
+
+@app.get("/settings", response_model=SettingsOut)
+def get_settings(session: Session = Depends(get_session)) -> SettingsOut:
+    setting = session.get(AppSetting, 1)
+    if setting is None:
+        return _DEFAULT_SETTINGS
+    return SettingsOut(
+        exchange_rate=setting.exchange_rate,
+        intl_shipping=setting.intl_shipping,
+        domestic_shipping=setting.domestic_shipping,
+        import_tax_rate=setting.import_tax_rate,
+        platform_fee_rate=setting.platform_fee_rate,
+        min_margin=setting.min_margin,
+        min_score=setting.min_score,
+    )
+
+
+@app.put("/settings", response_model=SettingsOut)
+def update_settings(
+    req: SettingsOut, _user: User = Depends(_current_user), session: Session = Depends(get_session)
+) -> SettingsOut:
+    setting = session.get(AppSetting, 1)
+    if setting is None:
+        setting = AppSetting(id=1)
+        session.add(setting)
+    setting.exchange_rate = req.exchange_rate
+    setting.intl_shipping = req.intl_shipping
+    setting.domestic_shipping = req.domestic_shipping
+    setting.import_tax_rate = req.import_tax_rate
+    setting.platform_fee_rate = req.platform_fee_rate
+    setting.min_margin = req.min_margin
+    setting.min_score = req.min_score
+    # 為替は exchange_rates にも反映し、取り込み時の正規化に使う。
+    from .models import ExchangeRate
+
+    session.add(
+        ExchangeRate(base_currency="CNY", quote_currency="JPY", rate=req.exchange_rate, kind="current")
+    )
+    session.commit()
+    return req
 
 
 @app.get("/alerts", response_model=list[AlertOut])

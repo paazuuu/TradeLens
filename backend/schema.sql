@@ -1,6 +1,19 @@
 -- 自動生成: python scripts/dump_schema.py（編集しない）
 -- docs/development_plan.md セクション 73
 
+CREATE TABLE app_settings (
+	id INTEGER NOT NULL, 
+	exchange_rate FLOAT NOT NULL, 
+	intl_shipping INTEGER NOT NULL, 
+	domestic_shipping INTEGER NOT NULL, 
+	import_tax_rate FLOAT NOT NULL, 
+	platform_fee_rate FLOAT NOT NULL, 
+	min_margin FLOAT NOT NULL, 
+	min_score INTEGER NOT NULL, 
+	updated_at TIMESTAMP WITH TIME ZONE NOT NULL, 
+	PRIMARY KEY (id)
+);
+
 CREATE TABLE categories (
 	id SERIAL NOT NULL, 
 	name VARCHAR(200) NOT NULL, 

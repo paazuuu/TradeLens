@@ -199,6 +199,25 @@ class Watchlist(Base, TimestampMixin):
     monitor_frequency: Mapped[str] = mapped_column(String(16), nullable=False, default="weekly")
 
 
+class AppSetting(Base):
+    """グローバル設定（シングルトン, id=1）。UI-012 Settings と対応（STEP 5 / セクション 66）。
+
+    率はパーセントで保持し（例 5, 10, 20）、Profit Engine では /100 して用いる。
+    """
+
+    __tablename__ = "app_settings"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, default=1)
+    exchange_rate: Mapped[float] = mapped_column(Float, nullable=False, default=21.0)
+    intl_shipping: Mapped[int] = mapped_column(Integer, nullable=False, default=1600)
+    domestic_shipping: Mapped[int] = mapped_column(Integer, nullable=False, default=700)
+    import_tax_rate: Mapped[float] = mapped_column(Float, nullable=False, default=5.0)
+    platform_fee_rate: Mapped[float] = mapped_column(Float, nullable=False, default=10.0)
+    min_margin: Mapped[float] = mapped_column(Float, nullable=False, default=20.0)
+    min_score: Mapped[int] = mapped_column(Integer, nullable=False, default=70)
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_now, nullable=False)
+
+
 class Alert(Base):
     __tablename__ = "alerts"
 
