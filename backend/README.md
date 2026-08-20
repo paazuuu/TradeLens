@@ -32,8 +32,8 @@ uvicorn app.main:app --reload --port 8000
 
 | メソッド | パス | 説明 |
 |---|---|---|
-| POST | `/research` | リサーチ実行（同期・Mock）。`ResearchOptions` を受け取りジョブと結果を返す |
-| GET | `/research/{id}` | リサーチ結果の取得 |
+| POST | `/research` | リサーチ実行（同期）。`ResearchOptions` を受け取り、結果を `research_jobs` へ保存して返す |
+| GET | `/research/{id}` | 保存済みリサーチ結果の取得 |
 | GET | `/opportunities` | 有望商品ランキング（`direction` / `minScore` / `minMargin` で絞り込み可） |
 | GET | `/products/{id}` | 商品詳細（日中市場・利益内訳・AI 有望理由・信頼度） |
 | POST | `/profit/simulate` | 利益シミュレーション（総コストベース） |
@@ -85,6 +85,25 @@ python scripts/dump_schema.py
 
 外部ソース由来のデータには `source` / `source_url` / `retrieved_at` を保持し、
 AI 生成値と取得値を区別できるようにしている（原則: セクション 94）。
+
+> テーブル作成は現状 `Base.metadata.create_all`（`init_db`）で行う。スキーマ変更を
+> 履歴管理する段階では Alembic マイグレーションへ移行する想定（`今後` 参照）。
+
+## テスト
+
+`pytest` による API・エンジンの回帰テストを備える。各実行は一時 SQLite を用い、
+開発/本番 DB とは分離する（`tests/conftest.py`）。
+
+```bash
+cd backend
+source .venv/bin/activate
+pip install -r requirements.txt   # pytest / httpx を含む
+pytest
+```
+
+カバー範囲: Opportunity/Profit エンジンの決定論性・スコア境界（`test_engine.py`）、
+認証フロー（401/409）・Watchlist 重複排除/削除・リサーチ永続化・マッチング・
+取込の CNY→JPY 正規化・Settings 反映（`test_api.py`）。
 
 ## 構成
 
@@ -191,6 +210,7 @@ export AUTH_TOKEN_TTL_HOURS=72   # 任意（既定 72）
 
 ## 今後
 
+- Alembic 導入（`create_all` から履歴管理されたマイグレーションへ移行）
 - Product Discovery の結果を価格取得層・DB（products / market_prices）へ接続
 - 為替 `exchange_rates` の変動から fx_stability を実データ化
-- ルート保護（Next.js middleware）とアカウント表示/ログアウトの結線
+- Phase 2 機能（価格履歴・需要/価格予測・OEM 分析・画像/レビュー比較）
