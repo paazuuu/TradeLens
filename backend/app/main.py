@@ -90,10 +90,6 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# リサーチジョブのインメモリ保存（MVP）。実運用では research_jobs テーブルへ移す。
-_research_jobs: dict[str, ResearchJob] = {}
-
-
 @app.get("/health")
 def health() -> dict[str, str]:
     return {"status": "ok"}
@@ -114,6 +110,18 @@ def _current_user(
     if user is None:
         raise HTTPException(status_code=401, detail="user not found")
     return user
+
+
+def _optional_user(
+    authorization: str | None = Header(default=None), session: Session = Depends(get_session)
+) -> User | None:
+    """トークンがあればユーザーを返し、無ければ None（デモ・匿名実行を許可）。"""
+    if not authorization or not authorization.lower().startswith("bearer "):
+        return None
+    user_id = auth.decode_token(authorization.split(" ", 1)[1].strip())
+    if user_id is None:
+        return None
+    return session.get(User, user_id)
 
 
 @app.post("/auth/register", response_model=TokenResponse, status_code=201)
@@ -281,18 +289,23 @@ def list_alerts(user: User = Depends(_current_user), session: Session = Depends(
 
 
 @app.post("/research", response_model=ResearchJob)
-def create_research(options: ResearchOptions, session: Session = Depends(get_session)) -> ResearchJob:
+def create_research(
+    options: ResearchOptions,
+    user: User | None = Depends(_optional_user),
+    session: Session = Depends(get_session),
+) -> ResearchJob:
     entries = repository.load_catalog(session)
     params = repository.load_cost_params(session)
     result = services.compute_research_result(options, entries=entries, params=params)
-    job = ResearchJob(id=f"job-{uuid.uuid4().hex[:12]}", status="completed", options=options, result=result)
-    _research_jobs[job.id] = job
-    return job
+    job_id = f"job-{uuid.uuid4().hex[:12]}"
+    return repository.save_research_job(
+        session, job_id, options, result, user_id=user.id if user else None
+    )
 
 
 @app.get("/research/{job_id}", response_model=ResearchJob)
-def get_research(job_id: str) -> ResearchJob:
-    job = _research_jobs.get(job_id)
+def get_research(job_id: str, session: Session = Depends(get_session)) -> ResearchJob:
+    job = repository.load_research_job(session, job_id)
     if job is None:
         raise HTTPException(status_code=404, detail="research job not found")
     return job

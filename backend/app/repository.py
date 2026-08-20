@@ -12,7 +12,18 @@ from sqlalchemy.orm import Session, selectinload
 from .catalog import CatalogEntry
 from .economics import DEFAULT_COST_PARAMS, CostParams
 from .models import AppSetting, CostRule, Product
-from .schemas import MarketSnapshot, MatchType, RiskLevel, Season, SizeTier, TradeDirection
+from .models import ResearchJob as ResearchJobRow
+from .schemas import (
+    MarketSnapshot,
+    MatchType,
+    ResearchJob,
+    ResearchOptions,
+    ResearchResult,
+    RiskLevel,
+    Season,
+    SizeTier,
+    TradeDirection,
+)
 
 
 def _snapshot(prices: dict[str, "MarketPriceRow"], market: str) -> MarketSnapshot:
@@ -124,3 +135,46 @@ def load_cost_params(session: Session) -> CostParams:
         platform_fee_rate=platform_fee_rate,
         other_rate=other_rate,
     )
+
+
+# ---- Research jobs（STEP 5-6: 実行履歴の永続化）---------------------------
+
+
+def save_research_job(
+    session: Session,
+    job_id: str,
+    options: ResearchOptions,
+    result: ResearchResult,
+    user_id: str | None = None,
+    status: str = "completed",
+) -> ResearchJob:
+    """リサーチ実行結果を research_jobs テーブルへ保存し、API スキーマを返す。"""
+    row = ResearchJobRow(
+        id=job_id,
+        user_id=user_id,
+        category=options.category,
+        options=options.model_dump(mode="json"),
+        status=status,
+        products_analyzed=result.products_analyzed,
+        opportunities_found=result.opportunities_found,
+        jp_to_cn=result.jp_to_cn,
+        cn_to_jp=result.cn_to_jp,
+    )
+    session.add(row)
+    session.commit()
+    return ResearchJob(id=row.id, status=row.status, options=options, result=result)
+
+
+def load_research_job(session: Session, job_id: str) -> ResearchJob | None:
+    """保存済みリサーチ結果を API スキーマとして読み出す。無ければ None。"""
+    row = session.get(ResearchJobRow, job_id)
+    if row is None:
+        return None
+    options = ResearchOptions.model_validate(row.options) if row.options else ResearchOptions(category=row.category)
+    result = ResearchResult(
+        products_analyzed=row.products_analyzed,
+        opportunities_found=row.opportunities_found,
+        jp_to_cn=row.jp_to_cn,
+        cn_to_jp=row.cn_to_jp,
+    )
+    return ResearchJob(id=row.id, status=row.status, options=options, result=result)
