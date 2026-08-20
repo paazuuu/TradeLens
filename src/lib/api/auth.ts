@@ -9,6 +9,11 @@ import { apiGet, apiPost, isApiEnabled } from "./client";
 
 const TOKEN_KEY = "crossborder_auth_token";
 
+/** ルート保護を有効にするか（NEXT_PUBLIC_REQUIRE_AUTH=true のとき）。 */
+export function authRequired(): boolean {
+  return process.env.NEXT_PUBLIC_REQUIRE_AUTH === "true";
+}
+
 export interface AuthUser {
   id: string;
   email: string;
