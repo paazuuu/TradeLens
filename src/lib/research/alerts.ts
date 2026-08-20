@@ -5,8 +5,9 @@
  * 決定論的に生成する。将来的にはスコア変化・価格変化の実績から生成する。
  */
 
-import { deriveEconomics, deriveReasons } from "./economics";
+import { deriveReasons } from "./economics";
 import { mockOpportunities, productCatalog } from "./mock-data";
+import { evaluate } from "./opportunity-engine";
 import { getSeasonalOpportunities } from "./seasonal";
 import type { ReasonCode, TradeDirection } from "./types";
 
@@ -33,8 +34,8 @@ export interface SeasonAlert {
 
 export type Alert = OpportunityAlert | SeasonAlert;
 
-/** Score 上昇アラートとみなす下限。 */
-const ALERT_SCORE = 85;
+/** Score 上昇アラートとみなす下限（backend monitoring.ALERT_SCORE と一致）。 */
+const ALERT_SCORE = 60;
 /** 季節アラートを出す残り日数の上限。 */
 const SEASON_ALERT_DAYS = 60;
 
@@ -45,7 +46,8 @@ export function getAlerts(): Alert[] {
     .sort((a, b) => b.score - a.score)
     .map((o) => {
       const entry = productCatalog.find((e) => e.id === o.id);
-      const reasons = entry ? deriveReasons(entry, deriveEconomics(entry)) : [];
+      const best = entry ? evaluate(entry).best : null;
+      const reasons = entry && best ? deriveReasons(entry, best.direction, best.economics) : [];
       return {
         kind: "opportunity" as const,
         id: o.id,

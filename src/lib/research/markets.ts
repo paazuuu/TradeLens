@@ -6,6 +6,7 @@
  */
 
 import { productCatalog } from "./mock-data";
+import { evaluate } from "./opportunity-engine";
 import type { TradeDirection } from "./types";
 
 function average(values: number[]): number {
@@ -61,8 +62,10 @@ export function getMarketComparison(): MarketComparisonRow[] {
   const rows: MarketComparisonRow[] = [];
 
   for (const [subCategory, entries] of bySubCategory) {
-    const exportCount = entries.filter((e) => e.bestDirection === "JP_TO_CN").length;
-    const importCount = entries.length - exportCount;
+    // スコア・商流方向はエンジンで導出し、Opportunity 一覧と整合させる。
+    const evaluations = entries.map((e) => evaluate(e).best);
+    const exportCount = evaluations.filter((b) => b.direction === "JP_TO_CN").length;
+    const importCount = evaluations.length - exportCount;
     let dominantDirection: TradeDirection | null = null;
     if (exportCount > importCount) dominantDirection = "JP_TO_CN";
     else if (importCount > exportCount) dominantDirection = "CN_TO_JP";
@@ -80,7 +83,7 @@ export function getMarketComparison(): MarketComparisonRow[] {
         entries.map((e) => e.china.competitors),
         entries.map((e) => e.china.demandIndex),
       ),
-      avgScore: Math.round(average(entries.map((e) => e.score))),
+      avgScore: Math.round(average(evaluations.map((b) => b.score))),
       dominantDirection,
     });
   }

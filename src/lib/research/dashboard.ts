@@ -5,13 +5,14 @@
  * モックデータから決定論的に導出する（原則: セクション 93）。
  */
 
-import { deriveEconomics, deriveReasons } from "./economics";
+import { deriveReasons } from "./economics";
 import { mockOpportunities, productCatalog } from "./mock-data";
+import { evaluate } from "./opportunity-engine";
 import { getSeasonalOpportunities, type SeasonalOpportunity } from "./seasonal";
 import type { ReasonCode, TradeDirection } from "./types";
 
-/** 有望とみなす Opportunity Score の下限。 */
-const PROMISING_SCORE = 70;
+/** 有望とみなす Opportunity Score の下限（backend insights.PROMISING_SCORE と一致）。 */
+const PROMISING_SCORE = 60;
 
 /** ダッシュボード上部の KPI（セクション 55）。 */
 export interface DashboardKpis {
@@ -56,7 +57,8 @@ export function getTopOpportunities(limit = 5): TopOpportunity[] {
     .slice(0, limit)
     .map((o) => {
       const entry = productCatalog.find((e) => e.id === o.id);
-      const reasons = entry ? deriveReasons(entry, deriveEconomics(entry)) : [];
+      const best = entry ? evaluate(entry).best : null;
+      const reasons = entry && best ? deriveReasons(entry, best.direction, best.economics) : [];
       return {
         id: o.id,
         name: o.name,

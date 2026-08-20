@@ -6,7 +6,8 @@
  * API 呼び出しへ差し替える。データはすべて架空であり、実在ブランド・価格を示さない。
  */
 
-import { deriveConfidence, deriveEconomics, deriveReasons, priceGapRate } from "./economics";
+import { deriveConfidence, deriveReasons, priceGapRate } from "./economics";
+import { evaluate } from "./opportunity-engine";
 import type { Opportunity, ProductCatalogEntry, ProductDetail } from "./types";
 
 export const productCatalog: ProductCatalogEntry[] = [
@@ -216,9 +217,9 @@ export const productCatalog: ProductCatalogEntry[] = [
   },
 ];
 
-/** カタログ 1 件を Opportunity 要約へ変換する。 */
+/** カタログ 1 件を Opportunity 要約へ変換する（score/bestDirection はエンジンで導出）。 */
 function toOpportunity(entry: ProductCatalogEntry): Opportunity {
-  const economics = deriveEconomics(entry);
+  const { best } = evaluate(entry);
   return {
     id: entry.id,
     name: entry.name,
@@ -226,15 +227,15 @@ function toOpportunity(entry: ProductCatalogEntry): Opportunity {
     category: entry.category,
     subCategory: entry.subCategory,
     imageUrl: entry.imageUrl,
-    bestDirection: entry.bestDirection,
+    bestDirection: best.direction,
     japanPrice: entry.japan.price,
     chinaPrice: entry.china.price,
     priceGapRate: priceGapRate(entry),
-    estimatedProfit: economics.estimatedProfit,
-    marginRate: economics.marginRate,
+    estimatedProfit: best.economics.estimatedProfit,
+    marginRate: best.economics.marginRate,
     seasonality: entry.seasonality,
     risk: entry.risk,
-    score: entry.score,
+    score: best.score,
     matchType: entry.matchType,
     matchConfidence: entry.matchConfidence,
   };
@@ -248,7 +249,9 @@ export function getProductDetail(id: string): ProductDetail | null {
   const entry = productCatalog.find((item) => item.id === id);
   if (!entry) return null;
 
-  const economics = deriveEconomics(entry);
+  const { best } = evaluate(entry);
+  const direction = best.direction;
+  const economics = best.economics;
   return {
     id: entry.id,
     name: entry.name,
@@ -257,17 +260,17 @@ export function getProductDetail(id: string): ProductDetail | null {
     subCategory: entry.subCategory,
     model: entry.model,
     imageUrl: entry.imageUrl,
-    bestDirection: entry.bestDirection,
+    bestDirection: direction,
     seasonality: entry.seasonality,
     risk: entry.risk,
     matchType: entry.matchType,
     matchConfidence: entry.matchConfidence,
-    score: entry.score,
+    score: best.score,
     japan: entry.japan,
     china: entry.china,
     priceGapRate: priceGapRate(entry),
     economics,
-    reasons: deriveReasons(entry, economics),
-    confidence: deriveConfidence(entry, economics),
+    reasons: deriveReasons(entry, direction, economics),
+    confidence: deriveConfidence(entry, direction, economics),
   };
 }
