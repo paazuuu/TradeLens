@@ -25,13 +25,15 @@ from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from . import auth, ingest, matching_engine, monitoring, repository, scheduler, services
+from . import auth, ingest, insights, matching_engine, monitoring, repository, scheduler, services
 from .agents import category_agent, product_discovery
 from .agents.schemas import CategoryTree, DecomposeRequest, DiscoveryRequest, DiscoveryResponse
 from .db import SessionLocal, get_session, init_db
 from .models import Alert, User, Watchlist
 from .schemas import (
     AlertOut,
+    AnalyticsResponse,
+    DashboardResponse,
     IngestResponse,
     LoginRequest,
     MarketsResponse,
@@ -287,6 +289,20 @@ def get_seasonal(session: Session = Depends(get_session)) -> list[SeasonalOpport
     entries = repository.load_catalog(session)
     params = repository.load_cost_params(session)
     return services.get_seasonal_opportunities(entries=entries, params=params)
+
+
+@app.get("/dashboard", response_model=DashboardResponse)
+def get_dashboard(session: Session = Depends(get_session)) -> DashboardResponse:
+    entries = repository.load_catalog(session)
+    params = repository.load_cost_params(session)
+    return insights.get_dashboard(entries, params)
+
+
+@app.get("/analytics", response_model=AnalyticsResponse)
+def get_analytics(session: Session = Depends(get_session)) -> AnalyticsResponse:
+    entries = repository.load_catalog(session)
+    params = repository.load_cost_params(session)
+    return insights.get_analytics(entries, params)
 
 
 # ---- AI 層（STEP 7-8）。LLM 優先・失敗時はルールベースにフォールバック。 ----

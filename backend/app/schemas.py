@@ -216,6 +216,74 @@ class MarketsResponse(CamelModel):
     comparison: list[MarketComparisonRow]
 
 
+class DashboardKpis(CamelModel):
+    total_products: int
+    promising: int
+    jp_to_cn: int
+    cn_to_jp: int
+    seasonal: int
+    avg_margin: float
+
+
+class TopOpportunity(CamelModel):
+    id: str
+    name: str
+    sub_category: str
+    best_direction: TradeDirection
+    score: int
+    estimated_profit: int
+    margin_rate: float
+    top_reason: ReasonCode | None = None
+
+
+class TopListItem(CamelModel):
+    id: str
+    name: str
+    direction: TradeDirection
+    value: float
+
+
+class DashboardResponse(CamelModel):
+    kpis: DashboardKpis
+    top_opportunities: list[TopOpportunity]
+    top_price_gap: list[TopListItem]
+    top_margin: list[TopListItem]
+    top_demand: list[TopListItem]
+    top_seasonal: list["SeasonalOpportunity"]
+
+
+class DirectionSplit(CamelModel):
+    direction: TradeDirection
+    count: int
+    avg_profit: int
+
+
+class SubCategoryScore(CamelModel):
+    sub_category: str
+    avg_score: int
+    count: int
+
+
+class MarginBucket(CamelModel):
+    id: str
+    label: str
+    count: int
+
+
+class ProfitByProduct(CamelModel):
+    id: str
+    name: str
+    estimated_profit: int
+    direction: TradeDirection
+
+
+class AnalyticsResponse(CamelModel):
+    direction_split: list[DirectionSplit]
+    sub_category_scores: list[SubCategoryScore]
+    margin_distribution: list[MarginBucket]
+    profit_by_product: list[ProfitByProduct]
+
+
 class MatchRequest(CamelModel):
     japan_name: str
     china_name: str
@@ -335,3 +403,7 @@ class SeasonalOpportunity(CamelModel):
     current_score: int
     predicted_score: int
     estimated_profit: int
+
+
+# 前方参照（SeasonalOpportunity）の解決。
+DashboardResponse.model_rebuild()

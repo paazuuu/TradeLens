@@ -9,11 +9,48 @@
 
 import { ApiError, apiGet, apiPost, isApiEnabled } from "@/lib/api/client";
 
+import {
+  type DirectionSplit,
+  getDirectionSplit,
+  getMarginDistribution,
+  getProfitByProduct,
+  getSubCategoryScores,
+  type MarginBucket,
+  type ProfitByProduct,
+  type SubCategoryScore,
+} from "./analytics";
+import {
+  type DashboardKpis,
+  getDashboardKpis,
+  getTopByDemand,
+  getTopByMargin,
+  getTopByPriceGap,
+  getTopOpportunities,
+  getTopSeasonal,
+  type TopListItem,
+  type TopOpportunity,
+} from "./dashboard";
 import { getMarketComparison, getMarketOverview, type MarketComparisonRow, type MarketOverview } from "./markets";
 import { getProductDetail, mockOpportunities } from "./mock-data";
 import { computeMockResult, type ResearchOptions, type ResearchResult } from "./research-flow";
 import { getSeasonalOpportunities, type SeasonalOpportunity } from "./seasonal";
 import type { Opportunity, ProductDetail } from "./types";
+
+export interface DashboardData {
+  kpis: DashboardKpis;
+  topOpportunities: TopOpportunity[];
+  topPriceGap: TopListItem[];
+  topMargin: TopListItem[];
+  topDemand: TopListItem[];
+  topSeasonal: SeasonalOpportunity[];
+}
+
+export interface AnalyticsData {
+  directionSplit: DirectionSplit[];
+  subCategoryScores: SubCategoryScore[];
+  marginDistribution: MarginBucket[];
+  profitByProduct: ProfitByProduct[];
+}
 
 export interface MarketsData {
   overview: MarketOverview;
@@ -82,4 +119,40 @@ export async function runResearch(options: ResearchOptions): Promise<ResearchRes
     }
   }
   return computeMockResult(options);
+}
+
+/** Dashboard 集計。API があれば GET /dashboard、なければモックから合成。 */
+export async function fetchDashboard(): Promise<DashboardData> {
+  if (isApiEnabled()) {
+    try {
+      return await apiGet<DashboardData>("/dashboard");
+    } catch {
+      // フォールバック。
+    }
+  }
+  return {
+    kpis: getDashboardKpis(),
+    topOpportunities: getTopOpportunities(),
+    topPriceGap: getTopByPriceGap(),
+    topMargin: getTopByMargin(),
+    topDemand: getTopByDemand(),
+    topSeasonal: getTopSeasonal(),
+  };
+}
+
+/** Analytics 集計。API があれば GET /analytics、なければモックから合成。 */
+export async function fetchAnalytics(): Promise<AnalyticsData> {
+  if (isApiEnabled()) {
+    try {
+      return await apiGet<AnalyticsData>("/analytics");
+    } catch {
+      // フォールバック。
+    }
+  }
+  return {
+    directionSplit: getDirectionSplit(),
+    subCategoryScores: getSubCategoryScores(),
+    marginDistribution: getMarginDistribution(),
+    profitByProduct: getProfitByProduct(),
+  };
 }
