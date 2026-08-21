@@ -493,5 +493,19 @@ class SimilarProduct(CamelModel):
     estimated_profit: int
 
 
+class BrandStat(CamelModel):
+    """ブランド別の集計（Phase 2）。"""
+
+    brand: str
+    product_count: int
+    avg_score: int
+    avg_margin_rate: float
+    total_estimated_profit: int
+    avg_competitors: int
+    competition_level: str  # low / medium / high
+    oem_share: float  # 0-1
+    dominant_direction: TradeDirection | None
+
+
 # 前方参照（SeasonalOpportunity）の解決。
 DashboardResponse.model_rebuild()

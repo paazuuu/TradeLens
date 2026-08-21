@@ -257,6 +257,15 @@ export interface Messages {
     count: string;
     avgScore: string;
     profit: string;
+    brandTitle: string;
+    brandDescription: string;
+    brandColumn: string;
+    products: string;
+    avgMargin: string;
+    totalProfit: string;
+    competition: string;
+    oemShare: string;
+    direction: string;
   };
   labels: {
     directionShort: Record<TradeDirection, string>;
@@ -559,6 +568,15 @@ const ja: Messages = {
     count: "件数",
     avgScore: "平均Score",
     profit: "推定利益",
+    brandTitle: "ブランド・競合分析",
+    brandDescription: "ブランド単位で平均Score・利益率・推定利益合計・競合水準・OEM 比率を集計します。",
+    brandColumn: "ブランド",
+    products: "商品数",
+    avgMargin: "平均利益率",
+    totalProfit: "推定利益合計",
+    competition: "競合水準",
+    oemShare: "OEM 比率",
+    direction: "優勢方向",
   },
   labels: {
     directionShort: { JP_TO_CN: "日→中", CN_TO_JP: "中→日" },
@@ -864,6 +882,15 @@ const zh: Messages = {
     count: "数量",
     avgScore: "平均Score",
     profit: "预估利润",
+    brandTitle: "品牌・竞争分析",
+    brandDescription: "按品牌汇总平均Score、利润率、预估利润合计、竞争水平与 OEM 比例。",
+    brandColumn: "品牌",
+    products: "商品数",
+    avgMargin: "平均利润率",
+    totalProfit: "预估利润合计",
+    competition: "竞争水平",
+    oemShare: "OEM 比例",
+    direction: "优势方向",
   },
   labels: {
     directionShort: { JP_TO_CN: "日→中", CN_TO_JP: "中→日" },

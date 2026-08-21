@@ -217,6 +217,23 @@ export interface SimilarProduct {
   estimatedProfit: number;
 }
 
+/** 競合水準（Phase 2）。 */
+export type CompetitionLevel = "low" | "medium" | "high";
+
+/** ブランド別の集計（Phase 2）。 */
+export interface BrandStat {
+  brand: string;
+  productCount: number;
+  avgScore: number;
+  avgMarginRate: number;
+  totalEstimatedProfit: number;
+  avgCompetitors: number;
+  competitionLevel: CompetitionLevel;
+  /** 0-1（OEM 比率）。 */
+  oemShare: number;
+  dominantDirection: TradeDirection | null;
+}
+
 /** UI-005 が表示する 1 商品の詳細。 */
 export interface ProductDetail {
   id: string;

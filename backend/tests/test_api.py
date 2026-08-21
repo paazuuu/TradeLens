@@ -162,6 +162,21 @@ def test_similar_products_ranked_and_bounded(client: TestClient) -> None:
     assert client.get("/products/nope/similar").status_code == 404
 
 
+def test_brand_analysis_aggregates(client: TestClient) -> None:
+    res = client.get("/analytics/brands")
+    assert res.status_code == 200
+    brands = res.json()
+    # モックカタログの主要ブランドを含む（取込テストが商品を追加している場合がある）。
+    assert {"OEM", "TrailMate", "SoraHeat", "OutFieldPro"} <= {b["brand"] for b in brands}
+    # 推定利益合計の降順。
+    profits = [b["totalEstimatedProfit"] for b in brands]
+    assert profits == sorted(profits, reverse=True)
+    oem = next(b for b in brands if b["brand"] == "OEM")
+    assert oem["oemShare"] == 1.0
+    assert oem["productCount"] >= 4
+    assert oem["competitionLevel"] in ("low", "medium", "high")
+
+
 def test_settings_roundtrip_changes_profit(client: TestClient) -> None:
     headers = _auth_headers(client)
     before = client.get("/products/opp-001").json()["economics"]["estimatedProfit"]

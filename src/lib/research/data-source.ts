@@ -32,6 +32,7 @@ import {
 } from "./dashboard";
 import { getMarketComparison, getMarketOverview, type MarketComparisonRow, type MarketOverview } from "./markets";
 import {
+  getBrandAnalysis,
   getOemAnalysis,
   getPriceHistory,
   getProductDetail,
@@ -41,7 +42,15 @@ import {
 } from "./mock-data";
 import { computeMockResult, type ResearchOptions, type ResearchResult } from "./research-flow";
 import { getSeasonalOpportunities, type SeasonalOpportunity } from "./seasonal";
-import type { OemAnalysis, Opportunity, PriceHistory, ProductDetail, ProductForecast, SimilarProduct } from "./types";
+import type {
+  BrandStat,
+  OemAnalysis,
+  Opportunity,
+  PriceHistory,
+  ProductDetail,
+  ProductForecast,
+  SimilarProduct,
+} from "./types";
 
 export interface DashboardData {
   kpis: DashboardKpis;
@@ -205,6 +214,18 @@ export async function fetchDashboard(): Promise<DashboardData> {
     topDemand: getTopByDemand(),
     topSeasonal: getTopSeasonal(),
   };
+}
+
+/** ブランド・競合分析（Phase 2）。API があれば GET /analytics/brands、なければモック。 */
+export async function fetchBrandAnalysis(): Promise<BrandStat[]> {
+  if (isApiEnabled()) {
+    try {
+      return await apiGet<BrandStat[]>("/analytics/brands");
+    } catch {
+      // フォールバック。
+    }
+  }
+  return getBrandAnalysis();
 }
 
 /** Analytics 集計。API があれば GET /analytics、なければモックから合成。 */

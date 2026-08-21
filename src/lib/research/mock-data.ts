@@ -6,6 +6,7 @@
  * API 呼び出しへ差し替える。データはすべて架空であり、実在ブランド・価格を示さない。
  */
 
+import { brandAnalysis } from "./brands";
 import { deriveConfidence, deriveReasons, priceGapRate } from "./economics";
 import { type ForecastResult, forecastDemand, forecastPrice } from "./forecast";
 import { type SeriesPoint, syntheticSeries, ymOf } from "./history";
@@ -13,6 +14,7 @@ import { analyzeOem } from "./oem";
 import { evaluate } from "./opportunity-engine";
 import { findSimilar } from "./similar";
 import type {
+  BrandStat,
   ForecastSeries,
   MarketSnapshot,
   OemAnalysis,
@@ -344,6 +346,11 @@ export function getSimilarProducts(id: string, limit = 5): SimilarProduct[] | nu
   const entry = productCatalog.find((item) => item.id === id);
   if (!entry) return null;
   return findSimilar(entry, productCatalog, limit);
+}
+
+/** ブランド別の集計（Phase 2）。 */
+export function getBrandAnalysis(): BrandStat[] {
+  return brandAnalysis(productCatalog);
 }
 
 /** 指定商品の価格・需要予測（有望方向の販売市場、先 6 か月）。存在しなければ null。 */

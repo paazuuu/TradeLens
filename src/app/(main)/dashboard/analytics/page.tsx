@@ -1,10 +1,11 @@
-import { fetchAnalytics } from "@/lib/research/data-source";
+import { fetchAnalytics, fetchBrandAnalysis } from "@/lib/research/data-source";
 
 import { PageHeader } from "../_components/page-header";
 import { AnalyticsCharts } from "./_components/analytics-charts";
+import { BrandAnalysis } from "./_components/brand-analysis";
 
 export default async function Page() {
-  const analytics = await fetchAnalytics();
+  const [analytics, brands] = await Promise.all([fetchAnalytics(), fetchBrandAnalysis()]);
 
   return (
     <div className="@container/main flex flex-col gap-4 md:gap-6">
@@ -15,6 +16,7 @@ export default async function Page() {
         profitByProduct={analytics.profitByProduct}
         subCategoryScores={analytics.subCategoryScores}
       />
+      <BrandAnalysis brands={brands} />
     </div>
   );
 }

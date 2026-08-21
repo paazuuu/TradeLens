@@ -28,6 +28,7 @@ from sqlalchemy.orm import Session
 
 from . import (
     auth,
+    brands,
     ingest,
     insights,
     matching_engine,
@@ -47,6 +48,7 @@ from .models import Alert, AppSetting, User, Watchlist
 from .schemas import (
     AlertOut,
     AnalyticsResponse,
+    BrandStat,
     DashboardResponse,
     IngestResponse,
     SettingsOut,
@@ -430,6 +432,12 @@ def get_analytics(session: Session = Depends(get_session)) -> AnalyticsResponse:
     entries = repository.load_catalog(session)
     params = repository.load_cost_params(session)
     return insights.get_analytics(entries, params)
+
+
+@app.get("/analytics/brands", response_model=list[BrandStat])
+def get_brand_analysis(session: Session = Depends(get_session)) -> list[BrandStat]:
+    entries = repository.load_catalog(session)
+    return brands.brand_analysis(entries)
 
 
 # ---- AI 層（STEP 7-8）。LLM 優先・失敗時はルールベースにフォールバック。 ----
