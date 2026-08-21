@@ -43,3 +43,41 @@ def test_higher_costs_reduce_profit() -> None:
     pricier = replace(DEFAULT_COST_PARAMS, platform_fee_rate=DEFAULT_COST_PARAMS.platform_fee_rate + 0.2)
     raised = derive_economics_for(entry, TradeDirection.CN_TO_JP, pricier)
     assert raised.estimated_profit < base.estimated_profit
+
+
+# ---- Phase 2: 価格履歴・予測 --------------------------------------------
+
+
+def test_synthetic_series_is_deterministic_and_anchored() -> None:
+    from app.history import synthetic_series
+
+    first = synthetic_series("opp-001", "JP", 4980, 82, "Summer", 2026, 8)
+    second = synthetic_series("opp-001", "JP", 4980, 82, "Summer", 2026, 8)
+    assert [p.price for p in first] == [p.price for p in second], "決定論的であること"
+    assert len(first) == 12
+    # 最新点は現在値に一致する。
+    assert first[-1].price == 4980 and first[-1].demand == 82
+    assert first[-1].year == 2026 and first[-1].month == 8
+    # 需要は 0-100 に収まる。
+    assert all(0 <= p.demand <= 100 for p in first)
+
+
+def test_linear_fit_recovers_perfect_line() -> None:
+    from app.forecast import _linear_fit
+
+    slope, intercept, r2 = _linear_fit([10.0, 20.0, 30.0, 40.0])
+    assert round(slope, 6) == 10.0
+    assert round(intercept, 6) == 10.0
+    assert round(r2, 6) == 1.0
+
+
+def test_forecast_price_horizon_and_bounds() -> None:
+    from app.forecast import forecast_price
+
+    prices = [100, 110, 120, 130, 140, 150]
+    months = [3, 4, 5, 6, 7, 8]
+    result = forecast_price(prices, months, "AllYear", 2026, 8, horizon=6)
+    assert len(result.points) == 6
+    assert all(p.value >= 1 for p in result.points)
+    # 上昇系列なので傾きは正。
+    assert result.slope_per_month > 0

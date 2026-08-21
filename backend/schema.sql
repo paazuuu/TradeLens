@@ -155,6 +155,18 @@ CREATE TABLE opportunities (
 	FOREIGN KEY(product_id) REFERENCES products (id)
 );
 
+CREATE TABLE price_history (
+	id SERIAL NOT NULL, 
+	product_id VARCHAR(64) NOT NULL, 
+	market VARCHAR(2) NOT NULL, 
+	price INTEGER NOT NULL, 
+	demand_index INTEGER, 
+	source VARCHAR(200), 
+	recorded_at TIMESTAMP WITH TIME ZONE NOT NULL, 
+	PRIMARY KEY (id), 
+	FOREIGN KEY(product_id) REFERENCES products (id)
+);
+
 CREATE TABLE product_matches (
 	id SERIAL NOT NULL, 
 	product_id VARCHAR(64) NOT NULL, 

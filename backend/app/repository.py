@@ -11,7 +11,7 @@ from sqlalchemy.orm import Session, selectinload
 
 from .catalog import CatalogEntry
 from .economics import DEFAULT_COST_PARAMS, CostParams
-from .models import AppSetting, CostRule, Product
+from .models import AppSetting, CostRule, PriceHistory, Product
 from .models import ResearchJob as ResearchJobRow
 from .schemas import (
     MarketSnapshot,
@@ -163,6 +163,16 @@ def save_research_job(
     session.add(row)
     session.commit()
     return ResearchJob(id=row.id, status=row.status, options=options, result=result)
+
+
+def load_price_history(session: Session, product_id: str, market: str) -> list[PriceHistory]:
+    """指定商品・市場の価格履歴を古い順に読み出す。"""
+    stmt = (
+        select(PriceHistory)
+        .where(PriceHistory.product_id == product_id, PriceHistory.market == market)
+        .order_by(PriceHistory.recorded_at)
+    )
+    return list(session.scalars(stmt).all())
 
 
 def load_research_job(session: Session, job_id: str) -> ResearchJob | None:

@@ -102,6 +102,24 @@ class MarketPrice(Base):
     product: Mapped[Product] = relationship(back_populates="market_prices")
 
 
+class PriceHistory(Base):
+    """価格・需要の月次時系列（Phase 2, セクション 41・47）。
+
+    market_prices が現在値、本テーブルが履歴を持つ。取込・監視のたびに 1 点追加する。
+    recorded_at は当該月の代表日時（1 日）。price は JPY（円）。
+    """
+
+    __tablename__ = "price_history"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    product_id: Mapped[str] = mapped_column(ForeignKey("products.id"), nullable=False)
+    market: Mapped[str] = mapped_column(String(2), nullable=False)  # JP / CN
+    price: Mapped[int] = mapped_column(Integer, nullable=False)  # 正規化後（円）
+    demand_index: Mapped[int | None] = mapped_column(Integer)
+    source: Mapped[str | None] = mapped_column(String(200))
+    recorded_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_now, nullable=False)
+
+
 class ExchangeRate(Base):
     __tablename__ = "exchange_rates"
 

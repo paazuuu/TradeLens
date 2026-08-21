@@ -19,13 +19,25 @@ from __future__ import annotations
 import os
 import uuid
 from contextlib import asynccontextmanager
+from datetime import datetime, timezone
 
 from fastapi import Depends, FastAPI, Header, HTTPException, Query, Response
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from . import auth, ingest, insights, matching_engine, monitoring, repository, scheduler, services
+from . import (
+    auth,
+    ingest,
+    insights,
+    matching_engine,
+    monitoring,
+    opportunity_engine,
+    repository,
+    scheduler,
+    services,
+    timeseries,
+)
 from .agents import category_agent, product_discovery
 from .agents.schemas import CategoryTree, DecomposeRequest, DiscoveryRequest, DiscoveryResponse
 from .db import SessionLocal, get_session, init_db
@@ -42,7 +54,9 @@ from .schemas import (
     MatchResult,
     MonitoringResult,
     Opportunity,
+    PriceHistoryResponse,
     ProductDetail,
+    ProductForecastResponse,
     ProductImport,
     ProfitSimulateRequest,
     ProfitSimulateResponse,
@@ -333,6 +347,32 @@ def get_product(product_id: str, session: Session = Depends(get_session)) -> Pro
     if detail is None:
         raise HTTPException(status_code=404, detail="product not found")
     return detail
+
+
+def _find_entry(session: Session, product_id: str):
+    entries = repository.load_catalog(session)
+    entry = next((e for e in entries if e.id == product_id), None)
+    if entry is None:
+        raise HTTPException(status_code=404, detail="product not found")
+    return entry
+
+
+@app.get("/products/{product_id}/price-history", response_model=PriceHistoryResponse)
+def get_price_history(product_id: str, session: Session = Depends(get_session)) -> PriceHistoryResponse:
+    entry = _find_entry(session, product_id)
+    jp_rows = repository.load_price_history(session, product_id, "JP")
+    cn_rows = repository.load_price_history(session, product_id, "CN")
+    return timeseries.build_price_history(entry, jp_rows, cn_rows, datetime.now(timezone.utc))
+
+
+@app.get("/products/{product_id}/forecast", response_model=ProductForecastResponse)
+def get_forecast(product_id: str, session: Session = Depends(get_session)) -> ProductForecastResponse:
+    entry = _find_entry(session, product_id)
+    params = repository.load_cost_params(session)
+    best_direction = opportunity_engine.evaluate(entry, params).best.direction
+    sell_market = "JP" if best_direction == TradeDirection.CN_TO_JP else "CN"
+    sell_rows = repository.load_price_history(session, product_id, sell_market)
+    return timeseries.build_forecast(entry, best_direction, sell_rows, datetime.now(timezone.utc))
 
 
 @app.post("/profit/simulate", response_model=ProfitSimulateResponse)

@@ -111,6 +111,29 @@ def test_ingest_normalizes_cny_to_jpy(client: TestClient) -> None:
     assert detail.json()["china"]["price"] > 90
 
 
+def test_price_history_anchored_to_current(client: TestClient) -> None:
+    hist = client.get("/products/opp-001/price-history")
+    assert hist.status_code == 200
+    body = hist.json()
+    assert len(body["japan"]) == 12 and len(body["china"]) == 12
+    detail = client.get("/products/opp-001").json()
+    # 履歴の最新点は現在の市場価格に一致する。
+    assert body["japan"][-1]["price"] == detail["japan"]["price"]
+    assert client.get("/products/nope/price-history").status_code == 404
+
+
+def test_forecast_targets_sell_market(client: TestClient) -> None:
+    res = client.get("/products/opp-001/forecast")
+    assert res.status_code == 200
+    fc = res.json()
+    # opp-001 は中国→日本が有望＝販売市場は日本。
+    assert fc["bestDirection"] == "CN_TO_JP"
+    assert fc["market"] == "JP"
+    assert len(fc["priceForecast"]["points"]) == 6
+    assert len(fc["demandForecast"]["points"]) == 6
+    assert all(0 <= p["value"] <= 100 for p in fc["demandForecast"]["points"])
+
+
 def test_settings_roundtrip_changes_profit(client: TestClient) -> None:
     headers = _auth_headers(client)
     before = client.get("/products/opp-001").json()["economics"]["estimatedProfit"]

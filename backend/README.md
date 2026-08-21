@@ -80,8 +80,8 @@ python scripts/dump_schema.py
 ```
 
 初期テーブル（セクション 73）: `users`, `categories`, `products`, `product_matches`,
-`market_prices`, `exchange_rates`, `cost_rules`, `profit_calculations`, `opportunities`,
-`seasonal_profiles`, `research_jobs`, `watchlists`, `alerts`。
+`market_prices`, `price_history`, `exchange_rates`, `cost_rules`, `profit_calculations`,
+`opportunities`, `seasonal_profiles`, `research_jobs`, `watchlists`, `alerts`, `app_settings`。
 
 外部ソース由来のデータには `source` / `source_url` / `retrieved_at` を保持し、
 AI 生成値と取得値を区別できるようにしている（原則: セクション 94）。
@@ -189,6 +189,21 @@ export ALERT_SCORE=60                  # 商機アラートの Score 閾値
 export SEASON_ALERT_DAYS=60            # 季節アラートを出す残り日数
 ```
 
+## 価格履歴・予測（Phase 2, セクション 41・47）
+
+現在価格（`market_prices`）に加え、月次の価格・需要履歴を `price_history` に保持する。
+予測は過去時系列から最小二乗法でトレンドを推定し、季節成分を重ねて先 6 か月を算出する
+（AI ではなく決定論的な統計手法。原則: セクション 93）。R² ベースの信頼度を併記する。
+
+| メソッド | パス | 説明 |
+|---|---|---|
+| GET | `/products/{id}/price-history` | 日中の月次価格・需要履歴（過去 12 か月） |
+| GET | `/products/{id}/forecast` | 有望方向の販売市場を対象とした価格・需要予測（先 6 か月） |
+
+実データ蓄積前は、現在値・需要・季節性から決定論的に合成した履歴をシードする
+（`history.py`）。生成式はフロント（`src/lib/research/history.ts`）と一致させ、
+API 有無に関わらず同一チャートを描く。取込・監視のたびに 1 点追加する運用を想定する。
+
 ## 認証（STEP 19）
 
 Email/Password + JWT。パスワードは PBKDF2-HMAC-SHA256（標準ライブラリ）でハッシュ化する。
@@ -213,4 +228,4 @@ export AUTH_TOKEN_TTL_HOURS=72   # 任意（既定 72）
 - Alembic 導入（`create_all` から履歴管理されたマイグレーションへ移行）
 - Product Discovery の結果を価格取得層・DB（products / market_prices）へ接続
 - 為替 `exchange_rates` の変動から fx_stability を実データ化
-- Phase 2 機能（価格履歴・需要/価格予測・OEM 分析・画像/レビュー比較）
+- Phase 2 残（OEM 分析・類似探索・ブランド/競合分析・画像比較・レビュー分析・キーワード差分析）

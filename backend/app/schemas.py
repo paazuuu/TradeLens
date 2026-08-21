@@ -415,5 +415,49 @@ class SeasonalOpportunity(CamelModel):
     estimated_profit: int
 
 
+# ---- 価格履歴・予測（Phase 2, セクション 41・47）----
+
+
+class TimeSeriesPoint(CamelModel):
+    """月次時系列の 1 点。date は "YYYY-MM"。"""
+
+    date: str
+    price: int
+    demand: int
+
+
+class ForecastPoint(CamelModel):
+    """予測時系列の 1 点。date は "YYYY-MM"。"""
+
+    date: str
+    value: int
+
+
+class PriceHistoryResponse(CamelModel):
+    """商品 1 件の日中価格・需要履歴。"""
+
+    product_id: str
+    japan: list[TimeSeriesPoint]
+    china: list[TimeSeriesPoint]
+
+
+class ForecastSeries(CamelModel):
+    """1 系列の予測結果（トレンド傾き・信頼度付き）。"""
+
+    points: list[ForecastPoint]
+    slope_per_month: float
+    confidence: int
+
+
+class ProductForecastResponse(CamelModel):
+    """価格予測・需要予測（有望方向の販売市場基準）。"""
+
+    product_id: str
+    market: str  # 予測対象の販売市場（JP / CN）
+    best_direction: TradeDirection
+    price_forecast: ForecastSeries
+    demand_forecast: ForecastSeries
+
+
 # 前方参照（SeasonalOpportunity）の解決。
 DashboardResponse.model_rebuild()

@@ -14,6 +14,7 @@ from sqlalchemy.orm import Session
 
 from . import opportunity_engine
 from .catalog import PRODUCT_CATALOG
+from .history import synthetic_series
 from .economics import (
     IMPORT_TAX_RATE,
     OTHER_RATE,
@@ -28,6 +29,7 @@ from .models import (
     ExchangeRate,
     MarketPrice,
     OpportunityRecord,
+    PriceHistory,
     ProfitCalculation,
     Product,
     SeasonalProfile,
@@ -47,6 +49,7 @@ def seed_database(session: Session) -> dict[str, int]:
         OpportunityRecord,
         ProfitCalculation,
         SeasonalProfile,
+        PriceHistory,
         MarketPrice,
         Product,
         Category,
@@ -78,7 +81,14 @@ def seed_database(session: Session) -> dict[str, int]:
             )
         )
 
-    counts = {"products": 0, "market_prices": 0, "opportunities": 0, "profit_calculations": 0, "seasonal_profiles": 0}
+    counts = {
+        "products": 0,
+        "market_prices": 0,
+        "price_history": 0,
+        "opportunities": 0,
+        "profit_calculations": 0,
+        "seasonal_profiles": 0,
+    }
 
     for entry in PRODUCT_CATALOG:
         # 商流方向とスコアはエンジンで計算し、その方向の利益を保存する（STEP 12-13）。
@@ -123,6 +133,22 @@ def seed_database(session: Session) -> dict[str, int]:
                 )
             )
             counts["market_prices"] += 1
+
+            # 価格・需要の月次履歴（Phase 2）。合成時系列を投入する。
+            for point in synthetic_series(
+                entry.id, market, snap.price, snap.demand_index, entry.seasonality.value, now.year, now.month
+            ):
+                session.add(
+                    PriceHistory(
+                        product_id=entry.id,
+                        market=market,
+                        price=point.price,
+                        demand_index=point.demand,
+                        source=SEED_SOURCE,
+                        recorded_at=datetime(point.year, point.month, 1, tzinfo=timezone.utc),
+                    )
+                )
+                counts["price_history"] += 1
 
         session.add(
             ProfitCalculation(
