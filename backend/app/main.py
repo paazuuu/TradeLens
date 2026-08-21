@@ -37,6 +37,7 @@ from . import (
     repository,
     scheduler,
     services,
+    similar,
     timeseries,
 )
 from .agents import category_agent, product_discovery
@@ -66,6 +67,7 @@ from .schemas import (
     ResearchJob,
     ResearchOptions,
     SeasonalOpportunity,
+    SimilarProduct,
     TokenResponse,
     TradeDirection,
     UserOut,
@@ -381,6 +383,17 @@ def get_forecast(product_id: str, session: Session = Depends(get_session)) -> Pr
 def get_oem_analysis(product_id: str, session: Session = Depends(get_session)) -> OemAnalysis:
     entry = _find_entry(session, product_id)
     return oem.analyze_oem(entry)
+
+
+@app.get("/products/{product_id}/similar", response_model=list[SimilarProduct])
+def get_similar(
+    product_id: str, limit: int = Query(default=5, ge=1, le=20), session: Session = Depends(get_session)
+) -> list[SimilarProduct]:
+    entries = repository.load_catalog(session)
+    target = next((e for e in entries if e.id == product_id), None)
+    if target is None:
+        raise HTTPException(status_code=404, detail="product not found")
+    return similar.find_similar(target, entries, limit=limit)
 
 
 @app.post("/profit/simulate", response_model=ProfitSimulateResponse)

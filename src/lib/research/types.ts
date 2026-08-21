@@ -203,6 +203,20 @@ export interface OemAnalysis {
   signals: OemSignal[];
 }
 
+/** 類似・代替候補 1 件（Phase 2）。 */
+export interface SimilarProduct {
+  id: string;
+  name: string;
+  brand: string;
+  subCategory: string;
+  /** 0-100（類似度）。 */
+  similarity: number;
+  bestDirection: TradeDirection;
+  /** Opportunity Score。 */
+  score: number;
+  estimatedProfit: number;
+}
+
 /** UI-005 が表示する 1 商品の詳細。 */
 export interface ProductDetail {
   id: string;

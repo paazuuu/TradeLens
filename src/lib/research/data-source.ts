@@ -31,10 +31,17 @@ import {
   type TopOpportunity,
 } from "./dashboard";
 import { getMarketComparison, getMarketOverview, type MarketComparisonRow, type MarketOverview } from "./markets";
-import { getOemAnalysis, getPriceHistory, getProductDetail, getProductForecast, mockOpportunities } from "./mock-data";
+import {
+  getOemAnalysis,
+  getPriceHistory,
+  getProductDetail,
+  getProductForecast,
+  getSimilarProducts,
+  mockOpportunities,
+} from "./mock-data";
 import { computeMockResult, type ResearchOptions, type ResearchResult } from "./research-flow";
 import { getSeasonalOpportunities, type SeasonalOpportunity } from "./seasonal";
-import type { OemAnalysis, Opportunity, PriceHistory, ProductDetail, ProductForecast } from "./types";
+import type { OemAnalysis, Opportunity, PriceHistory, ProductDetail, ProductForecast, SimilarProduct } from "./types";
 
 export interface DashboardData {
   kpis: DashboardKpis;
@@ -127,6 +134,21 @@ export async function fetchOemAnalysis(id: string): Promise<OemAnalysis | null> 
     }
   }
   return getOemAnalysis(id);
+}
+
+/** 商品の類似・代替候補（Phase 2）。API が 404 なら null、到達不能ならモック。 */
+export async function fetchSimilarProducts(id: string, limit = 5): Promise<SimilarProduct[] | null> {
+  if (isApiEnabled()) {
+    try {
+      return await apiGet<SimilarProduct[]>(`/products/${id}/similar?limit=${limit}`);
+    } catch (error) {
+      if (error instanceof ApiError && error.status === 404) {
+        return null;
+      }
+      // 到達不能時はモックへフォールバック。
+    }
+  }
+  return getSimilarProducts(id, limit);
 }
 
 /** 日中市場比較（KPI + サブカテゴリー別）。 */

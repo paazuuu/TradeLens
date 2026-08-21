@@ -480,5 +480,18 @@ class OemAnalysis(CamelModel):
     signals: list[OemSignal]
 
 
+class SimilarProduct(CamelModel):
+    """類似・代替候補 1 件（Phase 2）。"""
+
+    id: str
+    name: str
+    brand: str
+    sub_category: str
+    similarity: int  # 0-100
+    best_direction: TradeDirection
+    score: int  # Opportunity Score
+    estimated_profit: int
+
+
 # 前方参照（SeasonalOpportunity）の解決。
 DashboardResponse.model_rebuild()

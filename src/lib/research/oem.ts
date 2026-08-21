@@ -25,7 +25,7 @@ const MASS_PRODUCTION_COMPETITORS = 100;
 const LARGE_PRICE_GAP = 1.0;
 const WEAK_BRAND_CONFIDENCE = 80;
 
-function isOemBrand(brand: string): boolean {
+export function isOemBrand(brand: string): boolean {
   return OEM_BRANDS.has(brand.trim().toLowerCase());
 }
 

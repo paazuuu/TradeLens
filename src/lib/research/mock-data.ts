@@ -11,6 +11,7 @@ import { type ForecastResult, forecastDemand, forecastPrice } from "./forecast";
 import { type SeriesPoint, syntheticSeries, ymOf } from "./history";
 import { analyzeOem } from "./oem";
 import { evaluate } from "./opportunity-engine";
+import { findSimilar } from "./similar";
 import type {
   ForecastSeries,
   MarketSnapshot,
@@ -20,6 +21,7 @@ import type {
   ProductCatalogEntry,
   ProductDetail,
   ProductForecast,
+  SimilarProduct,
   TimeSeriesPoint,
 } from "./types";
 
@@ -335,6 +337,13 @@ export function getOemAnalysis(id: string): OemAnalysis | null {
   const entry = productCatalog.find((item) => item.id === id);
   if (!entry) return null;
   return analyzeOem(entry);
+}
+
+/** 指定商品に類似する商品を探索する。存在しなければ null。 */
+export function getSimilarProducts(id: string, limit = 5): SimilarProduct[] | null {
+  const entry = productCatalog.find((item) => item.id === id);
+  if (!entry) return null;
+  return findSimilar(entry, productCatalog, limit);
 }
 
 /** 指定商品の価格・需要予測（有望方向の販売市場、先 6 か月）。存在しなければ null。 */

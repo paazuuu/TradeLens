@@ -217,6 +217,12 @@ export interface Messages {
       weakBrandSignal: string;
     };
   };
+  similar: {
+    title: string;
+    description: string;
+    similarity: string;
+    empty: string;
+  };
   simulator: {
     title: string;
     description: string;
@@ -512,6 +518,12 @@ const ja: Messages = {
       massProduction: "中国側の多数出品（量産）",
       weakBrandSignal: "弱いブランド信号",
     },
+  },
+  similar: {
+    title: "類似・代替候補",
+    description: "サブカテゴリー・名称・ブランド・価格帯の近さから、横断で類似商品を探索します。",
+    similarity: "類似度",
+    empty: "類似候補は見つかりませんでした。",
   },
   simulator: {
     title: "利益シミュレーター",
@@ -811,6 +823,12 @@ const zh: Messages = {
       massProduction: "中国侧大量在售（量产）",
       weakBrandSignal: "品牌信号弱",
     },
+  },
+  similar: {
+    title: "相似・替代候选",
+    description: "根据子类目、名称、品牌与价格区间的接近度，跨类目探索相似商品。",
+    similarity: "相似度",
+    empty: "未找到相似候选。",
   },
   simulator: {
     title: "利润模拟器",

@@ -148,6 +148,20 @@ def test_oem_analysis_distinguishes_brands(client: TestClient) -> None:
     assert client.get("/products/nope/oem-analysis").status_code == 404
 
 
+def test_similar_products_ranked_and_bounded(client: TestClient) -> None:
+    res = client.get("/products/opp-001/similar?limit=4")
+    assert res.status_code == 200
+    items = res.json()
+    assert len(items) == 4
+    # 自身は含まれない。
+    assert all(item["id"] != "opp-001" for item in items)
+    # 類似度降順。
+    sims = [item["similarity"] for item in items]
+    assert sims == sorted(sims, reverse=True)
+    assert all(0 <= item["similarity"] <= 100 for item in items)
+    assert client.get("/products/nope/similar").status_code == 404
+
+
 def test_settings_roundtrip_changes_profit(client: TestClient) -> None:
     headers = _auth_headers(client)
     before = client.get("/products/opp-001").json()["economics"]["estimatedProfit"]
