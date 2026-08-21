@@ -234,6 +234,43 @@ export interface BrandStat {
   dominantDirection: TradeDirection | null;
 }
 
+/** レビュー観点コード（Phase 2）。 */
+export type ReviewAspectCode = "quality" | "price" | "delivery" | "durability" | "design" | "usability";
+
+/** 観点別のレビュー評価（Phase 2）。 */
+export interface ReviewAspect {
+  aspect: ReviewAspectCode;
+  /** 0-100。 */
+  sentiment: number;
+  mentions: number;
+}
+
+/** 商品のレビュー分析（Phase 2、合成センチメント）。 */
+export interface ReviewAnalysis {
+  productId: string;
+  /** 0-100。 */
+  overall: number;
+  positive: number;
+  neutral: number;
+  negative: number;
+  sampleSize: number;
+  aspects: ReviewAspect[];
+}
+
+/** 画像比較の判定（Phase 2）。 */
+export type ImageVerdict = "sameProduct" | "likelySame" | "different";
+
+/** 日中出品の画像比較（Phase 2）。MVP は画像未取得のためメタデータ由来の推定。 */
+export interface ImageComparison {
+  productId: string;
+  imagesAvailable: boolean;
+  jpImageUrl: string | null;
+  cnImageUrl: string | null;
+  /** 0-100（推定画像一致度）。 */
+  similarity: number;
+  verdict: ImageVerdict;
+}
+
 /** UI-005 が表示する 1 商品の詳細。 */
 export interface ProductDetail {
   id: string;

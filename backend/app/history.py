@@ -33,9 +33,13 @@ def _fnv1a(key: str) -> int:
     return h
 
 
-def _unit_noise(key: str) -> float:
-    """キーから [-1, 1) の決定論的擬似乱数を返す。"""
+def unit_noise(key: str) -> float:
+    """キーから [-1, 1) の決定論的擬似乱数を返す（TS 実装と一致）。"""
     return (_fnv1a(key) / (_UINT32 + 1)) * 2 - 1
+
+
+# 内部利用の別名（既存呼び出し互換）。
+_unit_noise = unit_noise
 
 
 def _seasonal_component(month: int, seasonality: str) -> float:

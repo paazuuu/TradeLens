@@ -507,5 +507,36 @@ class BrandStat(CamelModel):
     dominant_direction: TradeDirection | None
 
 
+class ReviewAspect(CamelModel):
+    """観点別のレビュー評価（Phase 2）。"""
+
+    aspect: str  # quality / price / delivery / durability / design / usability
+    sentiment: int  # 0-100
+    mentions: int
+
+
+class ReviewAnalysis(CamelModel):
+    """商品のレビュー分析（Phase 2、合成センチメント）。"""
+
+    product_id: str
+    overall: int  # 0-100
+    positive: int  # %
+    neutral: int  # %
+    negative: int  # %
+    sample_size: int
+    aspects: list[ReviewAspect]
+
+
+class ImageComparison(CamelModel):
+    """日中出品の画像比較（Phase 2）。MVP は画像未取得のためメタデータ由来の推定。"""
+
+    product_id: str
+    images_available: bool
+    jp_image_url: str | None
+    cn_image_url: str | None
+    similarity: int  # 0-100（推定画像一致度）
+    verdict: str  # sameProduct / likelySame / different
+
+
 # 前方参照（SeasonalOpportunity）の解決。
 DashboardResponse.model_rebuild()

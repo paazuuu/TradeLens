@@ -26,8 +26,8 @@ function fnv1a(key: string): number {
   return h >>> 0;
 }
 
-/** キーから [-1, 1) の決定論的擬似乱数を返す。 */
-function unitNoise(key: string): number {
+/** キーから [-1, 1) の決定論的擬似乱数を返す（Python 実装と一致）。 */
+export function unitNoise(key: string): number {
   return (fnv1a(key) / TWO_POW_32) * 2 - 1;
 }
 

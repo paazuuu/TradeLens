@@ -204,6 +204,21 @@ export SEASON_ALERT_DAYS=60            # 季節アラートを出す残り日数
 （`history.py`）。生成式はフロント（`src/lib/research/history.ts`）と一致させ、
 API 有無に関わらず同一チャートを描く。取込・監視のたびに 1 点追加する運用を想定する。
 
+## 商品分析（Phase 2, セクション 41）
+
+いずれも既存シグナルから決定論的に導出し、フロントの同名モジュールと生成式を一致させる。
+FNV-1a 由来の擬似乱数を使う合成値（レビュー・画像）は実行ごとに変化しない。
+
+| メソッド | パス | 説明 |
+|---|---|---|
+| GET | `/products/{id}/oem-analysis` | OEM 可能性（ブランド有無・マッチ・価格差・供給規模・ブランド信号） |
+| GET | `/products/{id}/similar` | 類似・代替候補（サブカテゴリー・名称バイグラム・ブランド・価格帯） |
+| GET | `/products/{id}/reviews` | レビュー分析（需要・リスク・件数から観点別センチメントを合成） |
+| GET | `/products/{id}/image-comparison` | 画像一致度の推定（画像未取得のためマッチ情報由来） |
+| GET | `/analytics/brands` | ブランド・競合分析（平均Score・利益率・利益合計・競合水準・OEM 比率） |
+
+`reviews` と `image-comparison` は合成・推定値であることを応答（`sampleSize` / `imagesAvailable=false`）で明示する。実データ接続後は本文集計・画像特徴量比較へ差し替える。
+
 ## 認証（STEP 19）
 
 Email/Password + JWT。パスワードは PBKDF2-HMAC-SHA256（標準ライブラリ）でハッシュ化する。
@@ -228,4 +243,4 @@ export AUTH_TOKEN_TTL_HOURS=72   # 任意（既定 72）
 - Alembic 導入（`create_all` から履歴管理されたマイグレーションへ移行）
 - Product Discovery の結果を価格取得層・DB（products / market_prices）へ接続
 - 為替 `exchange_rates` の変動から fx_stability を実データ化
-- Phase 2 残（OEM 分析・類似探索・ブランド/競合分析・画像比較・レビュー分析・キーワード差分析）
+- 実データ接続時: レビュー本文集計・画像特徴量比較への差し替え、キーワード差分析の追加

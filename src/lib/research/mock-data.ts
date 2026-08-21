@@ -10,12 +10,15 @@ import { brandAnalysis } from "./brands";
 import { deriveConfidence, deriveReasons, priceGapRate } from "./economics";
 import { type ForecastResult, forecastDemand, forecastPrice } from "./forecast";
 import { type SeriesPoint, syntheticSeries, ymOf } from "./history";
+import { compareImages } from "./images";
 import { analyzeOem } from "./oem";
 import { evaluate } from "./opportunity-engine";
+import { analyzeReviews } from "./reviews";
 import { findSimilar } from "./similar";
 import type {
   BrandStat,
   ForecastSeries,
+  ImageComparison,
   MarketSnapshot,
   OemAnalysis,
   Opportunity,
@@ -23,6 +26,7 @@ import type {
   ProductCatalogEntry,
   ProductDetail,
   ProductForecast,
+  ReviewAnalysis,
   SimilarProduct,
   TimeSeriesPoint,
 } from "./types";
@@ -351,6 +355,20 @@ export function getSimilarProducts(id: string, limit = 5): SimilarProduct[] | nu
 /** ブランド別の集計（Phase 2）。 */
 export function getBrandAnalysis(): BrandStat[] {
   return brandAnalysis(productCatalog);
+}
+
+/** 指定商品のレビュー分析（有望方向の販売市場基準）。存在しなければ null。 */
+export function getReviewAnalysis(id: string): ReviewAnalysis | null {
+  const entry = productCatalog.find((item) => item.id === id);
+  if (!entry) return null;
+  return analyzeReviews(entry, evaluate(entry).best.direction);
+}
+
+/** 指定商品の画像比較（Phase 2）。存在しなければ null。 */
+export function getImageComparison(id: string): ImageComparison | null {
+  const entry = productCatalog.find((item) => item.id === id);
+  if (!entry) return null;
+  return compareImages(entry);
 }
 
 /** 指定商品の価格・需要予測（有望方向の販売市場、先 6 か月）。存在しなければ null。 */

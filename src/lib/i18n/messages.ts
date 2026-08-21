@@ -223,6 +223,31 @@ export interface Messages {
     similarity: string;
     empty: string;
   };
+  reviews: {
+    title: string;
+    description: string;
+    overall: string;
+    positive: string;
+    neutral: string;
+    negative: string;
+    sampleSize: string;
+    mentions: string;
+    aspects: {
+      quality: string;
+      price: string;
+      delivery: string;
+      durability: string;
+      design: string;
+      usability: string;
+    };
+  };
+  imageComparison: {
+    title: string;
+    description: string;
+    similarity: string;
+    unavailable: string;
+    verdict: { sameProduct: string; likelySame: string; different: string };
+  };
   simulator: {
     title: string;
     description: string;
@@ -533,6 +558,31 @@ const ja: Messages = {
     description: "サブカテゴリー・名称・ブランド・価格帯の近さから、横断で類似商品を探索します。",
     similarity: "類似度",
     empty: "類似候補は見つかりませんでした。",
+  },
+  reviews: {
+    title: "レビュー分析",
+    description: "需要・リスク・レビュー件数から観点別の評価を推定します（合成データ）。",
+    overall: "総合評価",
+    positive: "肯定的",
+    neutral: "中立",
+    negative: "否定的",
+    sampleSize: "レビュー件数",
+    mentions: "言及数",
+    aspects: {
+      quality: "品質",
+      price: "価格",
+      delivery: "配送",
+      durability: "耐久性",
+      design: "デザイン",
+      usability: "使いやすさ",
+    },
+  },
+  imageComparison: {
+    title: "画像比較",
+    description: "日中出品の画像一致度を推定します。",
+    similarity: "推定画像一致度",
+    unavailable: "画像未取得のため、マッチ情報からの推定値です。",
+    verdict: { sameProduct: "同一商品", likelySame: "同一の可能性", different: "別商品の可能性" },
   },
   simulator: {
     title: "利益シミュレーター",
@@ -847,6 +897,31 @@ const zh: Messages = {
     description: "根据子类目、名称、品牌与价格区间的接近度，跨类目探索相似商品。",
     similarity: "相似度",
     empty: "未找到相似候选。",
+  },
+  reviews: {
+    title: "评价分析",
+    description: "根据需求、风险与评价数量推断各观点的评分（合成数据）。",
+    overall: "综合评分",
+    positive: "正面",
+    neutral: "中立",
+    negative: "负面",
+    sampleSize: "评价数量",
+    mentions: "提及数",
+    aspects: {
+      quality: "品质",
+      price: "价格",
+      delivery: "配送",
+      durability: "耐久性",
+      design: "设计",
+      usability: "易用性",
+    },
+  },
+  imageComparison: {
+    title: "图片比较",
+    description: "推断中日商品图片的一致度。",
+    similarity: "预估图片一致度",
+    unavailable: "因未获取图片，为基于匹配信息的推断值。",
+    verdict: { sameProduct: "同一商品", likelySame: "可能同一", different: "可能不同" },
   },
   simulator: {
     title: "利润模拟器",

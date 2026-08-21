@@ -29,6 +29,7 @@ from sqlalchemy.orm import Session
 from . import (
     auth,
     brands,
+    images,
     ingest,
     insights,
     matching_engine,
@@ -36,6 +37,7 @@ from . import (
     oem,
     opportunity_engine,
     repository,
+    reviews,
     scheduler,
     services,
     similar,
@@ -50,6 +52,7 @@ from .schemas import (
     AnalyticsResponse,
     BrandStat,
     DashboardResponse,
+    ImageComparison,
     IngestResponse,
     SettingsOut,
     LoginRequest,
@@ -68,6 +71,7 @@ from .schemas import (
     RegisterRequest,
     ResearchJob,
     ResearchOptions,
+    ReviewAnalysis,
     SeasonalOpportunity,
     SimilarProduct,
     TokenResponse,
@@ -396,6 +400,20 @@ def get_similar(
     if target is None:
         raise HTTPException(status_code=404, detail="product not found")
     return similar.find_similar(target, entries, limit=limit)
+
+
+@app.get("/products/{product_id}/reviews", response_model=ReviewAnalysis)
+def get_reviews(product_id: str, session: Session = Depends(get_session)) -> ReviewAnalysis:
+    entry = _find_entry(session, product_id)
+    params = repository.load_cost_params(session)
+    direction = opportunity_engine.evaluate(entry, params).best.direction
+    return reviews.analyze_reviews(entry, direction)
+
+
+@app.get("/products/{product_id}/image-comparison", response_model=ImageComparison)
+def get_image_comparison(product_id: str, session: Session = Depends(get_session)) -> ImageComparison:
+    entry = _find_entry(session, product_id)
+    return images.compare_images(entry)
 
 
 @app.post("/profit/simulate", response_model=ProfitSimulateResponse)

@@ -33,10 +33,12 @@ import {
 import { getMarketComparison, getMarketOverview, type MarketComparisonRow, type MarketOverview } from "./markets";
 import {
   getBrandAnalysis,
+  getImageComparison,
   getOemAnalysis,
   getPriceHistory,
   getProductDetail,
   getProductForecast,
+  getReviewAnalysis,
   getSimilarProducts,
   mockOpportunities,
 } from "./mock-data";
@@ -44,11 +46,13 @@ import { computeMockResult, type ResearchOptions, type ResearchResult } from "./
 import { getSeasonalOpportunities, type SeasonalOpportunity } from "./seasonal";
 import type {
   BrandStat,
+  ImageComparison,
   OemAnalysis,
   Opportunity,
   PriceHistory,
   ProductDetail,
   ProductForecast,
+  ReviewAnalysis,
   SimilarProduct,
 } from "./types";
 
@@ -158,6 +162,36 @@ export async function fetchSimilarProducts(id: string, limit = 5): Promise<Simil
     }
   }
   return getSimilarProducts(id, limit);
+}
+
+/** 商品のレビュー分析（Phase 2）。API が 404 なら null、到達不能ならモック。 */
+export async function fetchReviewAnalysis(id: string): Promise<ReviewAnalysis | null> {
+  if (isApiEnabled()) {
+    try {
+      return await apiGet<ReviewAnalysis>(`/products/${id}/reviews`);
+    } catch (error) {
+      if (error instanceof ApiError && error.status === 404) {
+        return null;
+      }
+      // 到達不能時はモックへフォールバック。
+    }
+  }
+  return getReviewAnalysis(id);
+}
+
+/** 商品の画像比較（Phase 2）。API が 404 なら null、到達不能ならモック。 */
+export async function fetchImageComparison(id: string): Promise<ImageComparison | null> {
+  if (isApiEnabled()) {
+    try {
+      return await apiGet<ImageComparison>(`/products/${id}/image-comparison`);
+    } catch (error) {
+      if (error instanceof ApiError && error.status === 404) {
+        return null;
+      }
+      // 到達不能時はモックへフォールバック。
+    }
+  }
+  return getImageComparison(id);
 }
 
 /** 日中市場比較（KPI + サブカテゴリー別）。 */

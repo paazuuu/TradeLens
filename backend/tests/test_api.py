@@ -177,6 +177,34 @@ def test_brand_analysis_aggregates(client: TestClient) -> None:
     assert oem["competitionLevel"] in ("low", "medium", "high")
 
 
+def test_review_analysis_distribution_sums_to_100(client: TestClient) -> None:
+    res = client.get("/products/opp-001/reviews")
+    assert res.status_code == 200
+    body = res.json()
+    assert body["positive"] + body["neutral"] + body["negative"] == 100
+    assert 0 <= body["overall"] <= 100
+    assert {a["aspect"] for a in body["aspects"]} == {
+        "quality",
+        "price",
+        "delivery",
+        "durability",
+        "design",
+        "usability",
+    }
+    assert all(0 <= a["sentiment"] <= 100 for a in body["aspects"])
+    assert client.get("/products/nope/reviews").status_code == 404
+
+
+def test_image_comparison_estimated_without_images(client: TestClient) -> None:
+    res = client.get("/products/opp-001/image-comparison")
+    assert res.status_code == 200
+    body = res.json()
+    assert body["imagesAvailable"] is False
+    assert 0 <= body["similarity"] <= 100
+    assert body["verdict"] in ("sameProduct", "likelySame", "different")
+    assert client.get("/products/nope/image-comparison").status_code == 404
+
+
 def test_settings_roundtrip_changes_profit(client: TestClient) -> None:
     headers = _auth_headers(client)
     before = client.get("/products/opp-001").json()["economics"]["estimatedProfit"]
