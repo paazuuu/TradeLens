@@ -203,6 +203,20 @@ export interface Messages {
     perMonth: string;
     demandUnit: string;
   };
+  oem: {
+    title: string;
+    description: string;
+    likelihood: string;
+    supplyStability: string;
+    verdict: { likely: string; possible: string; unlikely: string };
+    signals: {
+      noBrand: string;
+      oemMatchType: string;
+      largePriceGap: string;
+      massProduction: string;
+      weakBrandSignal: string;
+    };
+  };
   simulator: {
     title: string;
     description: string;
@@ -484,6 +498,20 @@ const ja: Messages = {
     trendFlat: "横ばい",
     perMonth: "/月",
     demandUnit: "需要指数",
+  },
+  oem: {
+    title: "OEM 分析",
+    description: "ブランド有無・マッチ・価格差・供給規模から OEM/ノーブランド由来の可能性を推定します。",
+    likelihood: "OEM 可能性",
+    supplyStability: "供給安定性",
+    verdict: { likely: "可能性高", possible: "可能性あり", unlikely: "可能性低" },
+    signals: {
+      noBrand: "ノーブランド/OEM 表記",
+      oemMatchType: "OEM・類似マッチ",
+      largePriceGap: "大きな価格差",
+      massProduction: "中国側の多数出品（量産）",
+      weakBrandSignal: "弱いブランド信号",
+    },
   },
   simulator: {
     title: "利益シミュレーター",
@@ -769,6 +797,20 @@ const zh: Messages = {
     trendFlat: "持平",
     perMonth: "/月",
     demandUnit: "需求指数",
+  },
+  oem: {
+    title: "OEM 分析",
+    description: "根据品牌有无、匹配、价格差与供应规模，推断商品来自 OEM/无品牌的可能性。",
+    likelihood: "OEM 可能性",
+    supplyStability: "供应稳定性",
+    verdict: { likely: "可能性高", possible: "有可能", unlikely: "可能性低" },
+    signals: {
+      noBrand: "无品牌/OEM 标注",
+      oemMatchType: "OEM・相似匹配",
+      largePriceGap: "较大价格差",
+      massProduction: "中国侧大量在售（量产）",
+      weakBrandSignal: "品牌信号弱",
+    },
   },
   simulator: {
     title: "利润模拟器",

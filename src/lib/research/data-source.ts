@@ -31,10 +31,10 @@ import {
   type TopOpportunity,
 } from "./dashboard";
 import { getMarketComparison, getMarketOverview, type MarketComparisonRow, type MarketOverview } from "./markets";
-import { getPriceHistory, getProductDetail, getProductForecast, mockOpportunities } from "./mock-data";
+import { getOemAnalysis, getPriceHistory, getProductDetail, getProductForecast, mockOpportunities } from "./mock-data";
 import { computeMockResult, type ResearchOptions, type ResearchResult } from "./research-flow";
 import { getSeasonalOpportunities, type SeasonalOpportunity } from "./seasonal";
-import type { Opportunity, PriceHistory, ProductDetail, ProductForecast } from "./types";
+import type { OemAnalysis, Opportunity, PriceHistory, ProductDetail, ProductForecast } from "./types";
 
 export interface DashboardData {
   kpis: DashboardKpis;
@@ -112,6 +112,21 @@ export async function fetchForecast(id: string): Promise<ProductForecast | null>
     }
   }
   return getProductForecast(id);
+}
+
+/** 商品の OEM 分析（Phase 2）。API が 404 なら null、到達不能ならモック。 */
+export async function fetchOemAnalysis(id: string): Promise<OemAnalysis | null> {
+  if (isApiEnabled()) {
+    try {
+      return await apiGet<OemAnalysis>(`/products/${id}/oem-analysis`);
+    } catch (error) {
+      if (error instanceof ApiError && error.status === 404) {
+        return null;
+      }
+      // 到達不能時はモックへフォールバック。
+    }
+  }
+  return getOemAnalysis(id);
 }
 
 /** 日中市場比較（KPI + サブカテゴリー別）。 */

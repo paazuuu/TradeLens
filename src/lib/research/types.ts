@@ -186,6 +186,23 @@ export interface ProductForecast {
   demandForecast: ForecastSeries;
 }
 
+/** OEM 分析のシグナルコード（Phase 2）。 */
+export type OemSignal = "noBrand" | "oemMatchType" | "largePriceGap" | "massProduction" | "weakBrandSignal";
+
+/** OEM 可能性の判定。 */
+export type OemVerdict = "likely" | "possible" | "unlikely";
+
+/** 1 商品の OEM 可能性分析（Phase 2）。 */
+export interface OemAnalysis {
+  productId: string;
+  /** 0-100（OEM 可能性）。 */
+  score: number;
+  verdict: OemVerdict;
+  /** 0-1（供給安定性）。 */
+  supplyStability: number;
+  signals: OemSignal[];
+}
+
 /** UI-005 が表示する 1 商品の詳細。 */
 export interface ProductDetail {
   id: string;

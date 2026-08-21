@@ -23,7 +23,7 @@ const WEIGHTS = {
   fxStability: 0.05,
 } as const;
 
-const SUPPLY_STABILITY: Record<MatchType, number> = {
+export const SUPPLY_STABILITY: Record<MatchType, number> = {
   EXACT: 1.0,
   MODEL_MATCH: 0.9,
   BRAND_MATCH: 0.8,
@@ -34,7 +34,7 @@ const SUPPLY_STABILITY: Record<MatchType, number> = {
 
 const RISK_SCORE: Record<RiskLevel, number> = { Low: 1.0, Medium: 0.6, High: 0.3 };
 
-function clamp01(value: number): number {
+export function clamp01(value: number): number {
   return Math.max(0, Math.min(1, value));
 }
 

@@ -9,10 +9,12 @@
 import { deriveConfidence, deriveReasons, priceGapRate } from "./economics";
 import { type ForecastResult, forecastDemand, forecastPrice } from "./forecast";
 import { type SeriesPoint, syntheticSeries, ymOf } from "./history";
+import { analyzeOem } from "./oem";
 import { evaluate } from "./opportunity-engine";
 import type {
   ForecastSeries,
   MarketSnapshot,
+  OemAnalysis,
   Opportunity,
   PriceHistory,
   ProductCatalogEntry,
@@ -326,6 +328,13 @@ export function getPriceHistory(id: string, now: Date = new Date()): PriceHistor
     japan: toTimeSeries(seriesFor(entry, "JP", now)),
     china: toTimeSeries(seriesFor(entry, "CN", now)),
   };
+}
+
+/** 指定商品の OEM 分析。存在しなければ null。 */
+export function getOemAnalysis(id: string): OemAnalysis | null {
+  const entry = productCatalog.find((item) => item.id === id);
+  if (!entry) return null;
+  return analyzeOem(entry);
 }
 
 /** 指定商品の価格・需要予測（有望方向の販売市場、先 6 か月）。存在しなければ null。 */

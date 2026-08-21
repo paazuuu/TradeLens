@@ -134,6 +134,20 @@ def test_forecast_targets_sell_market(client: TestClient) -> None:
     assert all(0 <= p["value"] <= 100 for p in fc["demandForecast"]["points"])
 
 
+def test_oem_analysis_distinguishes_brands(client: TestClient) -> None:
+    # opp-001 は OEM ブランド・OEM_CANDIDATE で可能性が高い。
+    oem = client.get("/products/opp-001/oem-analysis")
+    assert oem.status_code == 200
+    body = oem.json()
+    assert body["verdict"] == "likely"
+    assert "noBrand" in body["signals"]
+    # opp-005 は実ブランド・EXACT で可能性が低い。
+    branded = client.get("/products/opp-005/oem-analysis").json()
+    assert branded["verdict"] == "unlikely"
+    assert branded["score"] < body["score"]
+    assert client.get("/products/nope/oem-analysis").status_code == 404
+
+
 def test_settings_roundtrip_changes_profit(client: TestClient) -> None:
     headers = _auth_headers(client)
     before = client.get("/products/opp-001").json()["economics"]["estimatedProfit"]

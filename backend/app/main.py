@@ -32,6 +32,7 @@ from . import (
     insights,
     matching_engine,
     monitoring,
+    oem,
     opportunity_engine,
     repository,
     scheduler,
@@ -53,6 +54,7 @@ from .schemas import (
     MatchRequest,
     MatchResult,
     MonitoringResult,
+    OemAnalysis,
     Opportunity,
     PriceHistoryResponse,
     ProductDetail,
@@ -373,6 +375,12 @@ def get_forecast(product_id: str, session: Session = Depends(get_session)) -> Pr
     sell_market = "JP" if best_direction == TradeDirection.CN_TO_JP else "CN"
     sell_rows = repository.load_price_history(session, product_id, sell_market)
     return timeseries.build_forecast(entry, best_direction, sell_rows, datetime.now(timezone.utc))
+
+
+@app.get("/products/{product_id}/oem-analysis", response_model=OemAnalysis)
+def get_oem_analysis(product_id: str, session: Session = Depends(get_session)) -> OemAnalysis:
+    entry = _find_entry(session, product_id)
+    return oem.analyze_oem(entry)
 
 
 @app.post("/profit/simulate", response_model=ProfitSimulateResponse)

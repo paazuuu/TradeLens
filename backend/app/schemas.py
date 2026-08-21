@@ -459,5 +459,26 @@ class ProductForecastResponse(CamelModel):
     demand_forecast: ForecastSeries
 
 
+# ---- OEM 分析（Phase 2, セクション 41・88 の 15）----
+
+
+class OemSignal(str, Enum):
+    NO_BRAND = "noBrand"
+    OEM_MATCH_TYPE = "oemMatchType"
+    LARGE_PRICE_GAP = "largePriceGap"
+    MASS_PRODUCTION = "massProduction"
+    WEAK_BRAND_SIGNAL = "weakBrandSignal"
+
+
+class OemAnalysis(CamelModel):
+    """1 商品の OEM 可能性分析。"""
+
+    product_id: str
+    score: int  # 0-100（OEM 可能性）
+    verdict: str  # likely / possible / unlikely
+    supply_stability: float  # 0-1
+    signals: list[OemSignal]
+
+
 # 前方参照（SeasonalOpportunity）の解決。
 DashboardResponse.model_rebuild()

@@ -1,8 +1,9 @@
-import { fetchForecast, fetchPriceHistory, fetchProductDetail } from "@/lib/research/data-source";
+import { fetchForecast, fetchOemAnalysis, fetchPriceHistory, fetchProductDetail } from "@/lib/research/data-source";
 import { productCatalog } from "@/lib/research/mock-data";
 
 import { AiExplanation } from "./_components/ai-explanation";
 import { MarketComparison } from "./_components/market-comparison";
+import { OemAnalysis } from "./_components/oem-analysis";
 import { PriceForecast } from "./_components/price-forecast";
 import { ProductHeader } from "./_components/product-header";
 import { ProductNotFound } from "./_components/product-not-found";
@@ -21,7 +22,7 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
     return <ProductNotFound />;
   }
 
-  const [history, forecast] = await Promise.all([fetchPriceHistory(id), fetchForecast(id)]);
+  const [history, forecast, oem] = await Promise.all([fetchPriceHistory(id), fetchForecast(id), fetchOemAnalysis(id)]);
 
   return (
     <div className="@container/main flex flex-col gap-4 md:gap-6">
@@ -32,6 +33,7 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
         <ProfitSimulator detail={detail} />
         <AiExplanation detail={detail} />
       </div>
+      {oem ? <OemAnalysis analysis={oem} /> : null}
     </div>
   );
 }
