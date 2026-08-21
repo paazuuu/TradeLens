@@ -184,6 +184,25 @@ export interface Messages {
     confidencePrice: string;
     confidenceProfit: string;
   };
+  forecast: {
+    historyTitle: string;
+    historyDescription: string;
+    forecastTitle: string;
+    forecastDescription: string;
+    priceForecast: string;
+    demandForecast: string;
+    japanPrice: string;
+    chinaPrice: string;
+    actual: string;
+    forecastLabel: string;
+    confidence: string;
+    trend: string;
+    trendUp: string;
+    trendDown: string;
+    trendFlat: string;
+    perMonth: string;
+    demandUnit: string;
+  };
   simulator: {
     title: string;
     description: string;
@@ -446,6 +465,25 @@ const ja: Messages = {
     confidenceMatch: "マッチ信頼度",
     confidencePrice: "価格信頼度",
     confidenceProfit: "利益信頼度",
+  },
+  forecast: {
+    historyTitle: "価格・需要の推移",
+    historyDescription: "過去 12 か月の日中価格と需要指数（合成データ）。",
+    forecastTitle: "価格・需要予測",
+    forecastDescription: "有望方向の販売市場を対象に、先 6 か月をトレンド＋季節性で予測します。",
+    priceForecast: "価格予測",
+    demandForecast: "需要予測",
+    japanPrice: "日本価格",
+    chinaPrice: "中国価格",
+    actual: "実績",
+    forecastLabel: "予測",
+    confidence: "予測信頼度",
+    trend: "トレンド",
+    trendUp: "上昇傾向",
+    trendDown: "下降傾向",
+    trendFlat: "横ばい",
+    perMonth: "/月",
+    demandUnit: "需要指数",
   },
   simulator: {
     title: "利益シミュレーター",
@@ -712,6 +750,25 @@ const zh: Messages = {
     confidenceMatch: "匹配可信度",
     confidencePrice: "价格可信度",
     confidenceProfit: "利润可信度",
+  },
+  forecast: {
+    historyTitle: "价格与需求走势",
+    historyDescription: "过去 12 个月的中日价格与需求指数（合成数据）。",
+    forecastTitle: "价格与需求预测",
+    forecastDescription: "以优势方向的销售市场为对象，基于趋势与季节性预测未来 6 个月。",
+    priceForecast: "价格预测",
+    demandForecast: "需求预测",
+    japanPrice: "日本价格",
+    chinaPrice: "中国价格",
+    actual: "实际",
+    forecastLabel: "预测",
+    confidence: "预测可信度",
+    trend: "趋势",
+    trendUp: "上升趋势",
+    trendDown: "下降趋势",
+    trendFlat: "持平",
+    perMonth: "/月",
+    demandUnit: "需求指数",
   },
   simulator: {
     title: "利润模拟器",

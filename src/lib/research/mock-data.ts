@@ -7,8 +7,19 @@
  */
 
 import { deriveConfidence, deriveReasons, priceGapRate } from "./economics";
+import { type ForecastResult, forecastDemand, forecastPrice } from "./forecast";
+import { type SeriesPoint, syntheticSeries, ymOf } from "./history";
 import { evaluate } from "./opportunity-engine";
-import type { Opportunity, ProductCatalogEntry, ProductDetail } from "./types";
+import type {
+  ForecastSeries,
+  MarketSnapshot,
+  Opportunity,
+  PriceHistory,
+  ProductCatalogEntry,
+  ProductDetail,
+  ProductForecast,
+  TimeSeriesPoint,
+} from "./types";
 
 export const productCatalog: ProductCatalogEntry[] = [
   {
@@ -272,5 +283,66 @@ export function getProductDetail(id: string): ProductDetail | null {
     economics,
     reasons: deriveReasons(entry, direction, economics),
     confidence: deriveConfidence(entry, direction, economics),
+  };
+}
+
+// ---- Phase 2: 価格履歴・予測（backend timeseries.py に対応）----
+
+function snapshotFor(entry: ProductCatalogEntry, market: string): MarketSnapshot {
+  return market === "JP" ? entry.japan : entry.china;
+}
+
+function seriesFor(entry: ProductCatalogEntry, market: string, now: Date): SeriesPoint[] {
+  const snap = snapshotFor(entry, market);
+  return syntheticSeries(
+    entry.id,
+    market,
+    snap.price,
+    snap.demandIndex,
+    entry.seasonality,
+    now.getFullYear(),
+    now.getMonth() + 1,
+  );
+}
+
+function toTimeSeries(points: SeriesPoint[]): TimeSeriesPoint[] {
+  return points.map((p) => ({ date: ymOf(p.year, p.month), price: p.price, demand: p.demand }));
+}
+
+function toForecastSeries(result: ForecastResult): ForecastSeries {
+  return {
+    points: result.points.map((p) => ({ date: ymOf(p.year, p.month), value: p.value })),
+    slopePerMonth: result.slopePerMonth,
+    confidence: result.confidence,
+  };
+}
+
+/** 指定商品の日中価格・需要履歴（過去 12 か月）を合成する。存在しなければ null。 */
+export function getPriceHistory(id: string, now: Date = new Date()): PriceHistory | null {
+  const entry = productCatalog.find((item) => item.id === id);
+  if (!entry) return null;
+  return {
+    productId: entry.id,
+    japan: toTimeSeries(seriesFor(entry, "JP", now)),
+    china: toTimeSeries(seriesFor(entry, "CN", now)),
+  };
+}
+
+/** 指定商品の価格・需要予測（有望方向の販売市場、先 6 か月）。存在しなければ null。 */
+export function getProductForecast(id: string, now: Date = new Date()): ProductForecast | null {
+  const entry = productCatalog.find((item) => item.id === id);
+  if (!entry) return null;
+  const best = evaluate(entry).best;
+  const market = best.direction === "CN_TO_JP" ? "JP" : "CN";
+  const series = seriesFor(entry, market, now);
+  const prices = series.map((p) => p.price);
+  const demand = series.map((p) => p.demand);
+  const last = series[series.length - 1];
+  return {
+    productId: entry.id,
+    market,
+    bestDirection: best.direction,
+    priceForecast: toForecastSeries(forecastPrice(prices, entry.seasonality, last.year, last.month)),
+    demandForecast: toForecastSeries(forecastDemand(demand, entry.seasonality, last.year, last.month)),
   };
 }

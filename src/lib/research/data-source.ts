@@ -31,10 +31,10 @@ import {
   type TopOpportunity,
 } from "./dashboard";
 import { getMarketComparison, getMarketOverview, type MarketComparisonRow, type MarketOverview } from "./markets";
-import { getProductDetail, mockOpportunities } from "./mock-data";
+import { getPriceHistory, getProductDetail, getProductForecast, mockOpportunities } from "./mock-data";
 import { computeMockResult, type ResearchOptions, type ResearchResult } from "./research-flow";
 import { getSeasonalOpportunities, type SeasonalOpportunity } from "./seasonal";
-import type { Opportunity, ProductDetail } from "./types";
+import type { Opportunity, PriceHistory, ProductDetail, ProductForecast } from "./types";
 
 export interface DashboardData {
   kpis: DashboardKpis;
@@ -82,6 +82,36 @@ export async function fetchProductDetail(id: string): Promise<ProductDetail | nu
     }
   }
   return getProductDetail(id);
+}
+
+/** 商品の価格・需要履歴（Phase 2）。API が 404 なら null、到達不能ならモック合成。 */
+export async function fetchPriceHistory(id: string): Promise<PriceHistory | null> {
+  if (isApiEnabled()) {
+    try {
+      return await apiGet<PriceHistory>(`/products/${id}/price-history`);
+    } catch (error) {
+      if (error instanceof ApiError && error.status === 404) {
+        return null;
+      }
+      // 到達不能時はモックへフォールバック。
+    }
+  }
+  return getPriceHistory(id);
+}
+
+/** 商品の価格・需要予測（Phase 2）。API が 404 なら null、到達不能ならモック合成。 */
+export async function fetchForecast(id: string): Promise<ProductForecast | null> {
+  if (isApiEnabled()) {
+    try {
+      return await apiGet<ProductForecast>(`/products/${id}/forecast`);
+    } catch (error) {
+      if (error instanceof ApiError && error.status === 404) {
+        return null;
+      }
+      // 到達不能時はモックへフォールバック。
+    }
+  }
+  return getProductForecast(id);
 }
 
 /** 日中市場比較（KPI + サブカテゴリー別）。 */

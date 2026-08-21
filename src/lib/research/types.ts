@@ -147,6 +147,45 @@ export interface ProductCatalogEntry {
   china: MarketSnapshot;
 }
 
+/** 月次時系列の 1 点（価格履歴、Phase 2）。date は "YYYY-MM"。 */
+export interface TimeSeriesPoint {
+  date: string;
+  price: number;
+  demand: number;
+}
+
+/** 商品 1 件の日中価格・需要履歴（Phase 2）。 */
+export interface PriceHistory {
+  productId: string;
+  japan: TimeSeriesPoint[];
+  china: TimeSeriesPoint[];
+}
+
+/** 予測時系列の 1 点（Phase 2）。 */
+export interface ForecastPoint {
+  date: string;
+  value: number;
+}
+
+/** 1 系列の予測結果（トレンド傾き・信頼度付き、Phase 2）。 */
+export interface ForecastSeries {
+  points: ForecastPoint[];
+  /** 1 か月あたりの変化量（円 or 指数）。 */
+  slopePerMonth: number;
+  /** 0-100。トレンドの当てはまり（決定係数 R² ベース）。 */
+  confidence: number;
+}
+
+/** 価格予測・需要予測（有望方向の販売市場基準、Phase 2）。 */
+export interface ProductForecast {
+  productId: string;
+  /** 予測対象の販売市場（JP / CN）。 */
+  market: string;
+  bestDirection: TradeDirection;
+  priceForecast: ForecastSeries;
+  demandForecast: ForecastSeries;
+}
+
 /** UI-005 が表示する 1 商品の詳細。 */
 export interface ProductDetail {
   id: string;
