@@ -34,6 +34,7 @@ import { getMarketComparison, getMarketOverview, type MarketComparisonRow, type 
 import {
   getBrandAnalysis,
   getImageComparison,
+  getKeywordGaps,
   getOemAnalysis,
   getPriceHistory,
   getProductDetail,
@@ -47,6 +48,7 @@ import { getSeasonalOpportunities, type SeasonalOpportunity } from "./seasonal";
 import type {
   BrandStat,
   ImageComparison,
+  KeywordGap,
   OemAnalysis,
   Opportunity,
   PriceHistory,
@@ -248,6 +250,18 @@ export async function fetchDashboard(): Promise<DashboardData> {
     topDemand: getTopByDemand(),
     topSeasonal: getTopSeasonal(),
   };
+}
+
+/** 中日市場のキーワード差分析（Phase 2）。API があれば GET /markets/keywords、なければモック。 */
+export async function fetchKeywordGaps(): Promise<KeywordGap[]> {
+  if (isApiEnabled()) {
+    try {
+      return await apiGet<KeywordGap[]>("/markets/keywords");
+    } catch {
+      // フォールバック。
+    }
+  }
+  return getKeywordGaps();
 }
 
 /** ブランド・競合分析（Phase 2）。API があれば GET /analytics/brands、なければモック。 */

@@ -216,6 +216,7 @@ FNV-1a 由来の擬似乱数を使う合成値（レビュー・画像）は実�
 | GET | `/products/{id}/reviews` | レビュー分析（需要・リスク・件数から観点別センチメントを合成） |
 | GET | `/products/{id}/image-comparison` | 画像一致度の推定（画像未取得のためマッチ情報由来） |
 | GET | `/analytics/brands` | ブランド・競合分析（平均Score・利益率・利益合計・競合水準・OEM 比率） |
+| GET | `/markets/keywords` | 中日市場のキーワード差分析（商品名 n-gram の日中市場強度差） |
 
 `reviews` と `image-comparison` は合成・推定値であることを応答（`sampleSize` / `imagesAvailable=false`）で明示する。実データ接続後は本文集計・画像特徴量比較へ差し替える。
 
@@ -243,4 +244,4 @@ export AUTH_TOKEN_TTL_HOURS=72   # 任意（既定 72）
 - Alembic 導入（`create_all` から履歴管理されたマイグレーションへ移行）
 - Product Discovery の結果を価格取得層・DB（products / market_prices）へ接続
 - 為替 `exchange_rates` の変動から fx_stability を実データ化
-- 実データ接続時: レビュー本文集計・画像特徴量比較への差し替え、キーワード差分析の追加
+- 実データ接続時: レビュー本文集計・画像特徴量比較・実検索ボリュームでのキーワード分析への差し替え

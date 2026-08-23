@@ -32,6 +32,7 @@ from . import (
     images,
     ingest,
     insights,
+    keywords,
     matching_engine,
     monitoring,
     oem,
@@ -54,6 +55,7 @@ from .schemas import (
     DashboardResponse,
     ImageComparison,
     IngestResponse,
+    KeywordGap,
     SettingsOut,
     LoginRequest,
     MarketsResponse,
@@ -429,6 +431,12 @@ def get_markets(session: Session = Depends(get_session)) -> MarketsResponse:
         overview=services.get_market_overview(entries=entries),
         comparison=services.get_market_comparison(entries=entries, params=params),
     )
+
+
+@app.get("/markets/keywords", response_model=list[KeywordGap])
+def get_keyword_gaps(session: Session = Depends(get_session)) -> list[KeywordGap]:
+    entries = repository.load_catalog(session)
+    return keywords.keyword_gaps(entries)
 
 
 @app.get("/seasonal", response_model=list[SeasonalOpportunity])

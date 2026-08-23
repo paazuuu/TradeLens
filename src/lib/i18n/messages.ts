@@ -248,6 +248,16 @@ export interface Messages {
     unavailable: string;
     verdict: { sameProduct: string; likelySame: string; different: string };
   };
+  keywords: {
+    title: string;
+    description: string;
+    keyword: string;
+    products: string;
+    jpStrength: string;
+    cnStrength: string;
+    gap: string;
+    bias: { jp: string; cn: string; balanced: string };
+  };
   simulator: {
     title: string;
     description: string;
@@ -583,6 +593,16 @@ const ja: Messages = {
     similarity: "推定画像一致度",
     unavailable: "画像未取得のため、マッチ情報からの推定値です。",
     verdict: { sameProduct: "同一商品", likelySame: "同一の可能性", different: "別商品の可能性" },
+  },
+  keywords: {
+    title: "キーワード差分析",
+    description: "商品名の共通キーワードごとに日中市場の強度を比較します。片側で強く他方で手薄なほど商機を示します。",
+    keyword: "キーワード",
+    products: "商品数",
+    jpStrength: "日本強度",
+    cnStrength: "中国強度",
+    gap: "差",
+    bias: { jp: "日本優勢", cn: "中国優勢", balanced: "拮抗" },
   },
   simulator: {
     title: "利益シミュレーター",
@@ -922,6 +942,16 @@ const zh: Messages = {
     similarity: "预估图片一致度",
     unavailable: "因未获取图片，为基于匹配信息的推断值。",
     verdict: { sameProduct: "同一商品", likelySame: "可能同一", different: "可能不同" },
+  },
+  keywords: {
+    title: "关键词差异分析",
+    description: "按商品名称的共同关键词比较中日市场强度。一侧强、另一侧薄弱，越可能是商机。",
+    keyword: "关键词",
+    products: "商品数",
+    jpStrength: "日本强度",
+    cnStrength: "中国强度",
+    gap: "差值",
+    bias: { jp: "日本占优", cn: "中国占优", balanced: "相当" },
   },
   simulator: {
     title: "利润模拟器",

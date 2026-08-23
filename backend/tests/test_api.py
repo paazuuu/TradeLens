@@ -205,6 +205,21 @@ def test_image_comparison_estimated_without_images(client: TestClient) -> None:
     assert client.get("/products/nope/image-comparison").status_code == 404
 
 
+def test_keyword_gaps_ranked_by_absolute_gap(client: TestClient) -> None:
+    res = client.get("/markets/keywords")
+    assert res.status_code == 200
+    gaps = res.json()
+    assert len(gaps) > 0
+    # 抽出キーワードは 3 文字以上・再出現（商品数 >= 2）。
+    assert all(len(g["keyword"]) >= 3 and g["productCount"] >= 2 for g in gaps)
+    # gap = 日本強度 - 中国強度、|gap| の降順。
+    for g in gaps:
+        assert g["gap"] == g["jpStrength"] - g["cnStrength"]
+        assert g["bias"] in ("jp", "cn", "balanced")
+    abs_gaps = [abs(g["gap"]) for g in gaps]
+    assert abs_gaps == sorted(abs_gaps, reverse=True)
+
+
 def test_settings_roundtrip_changes_profit(client: TestClient) -> None:
     headers = _auth_headers(client)
     before = client.get("/products/opp-001").json()["economics"]["estimatedProfit"]

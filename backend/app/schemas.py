@@ -538,5 +538,16 @@ class ImageComparison(CamelModel):
     verdict: str  # sameProduct / likelySame / different
 
 
+class KeywordGap(CamelModel):
+    """中日市場のキーワード強度差 1 件（Phase 2）。"""
+
+    keyword: str
+    product_count: int
+    jp_strength: int  # 0-100
+    cn_strength: int  # 0-100
+    gap: int  # jp_strength - cn_strength
+    bias: str  # jp / cn / balanced
+
+
 # 前方参照（SeasonalOpportunity）の解決。
 DashboardResponse.model_rebuild()

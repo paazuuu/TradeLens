@@ -11,6 +11,7 @@ import { deriveConfidence, deriveReasons, priceGapRate } from "./economics";
 import { type ForecastResult, forecastDemand, forecastPrice } from "./forecast";
 import { type SeriesPoint, syntheticSeries, ymOf } from "./history";
 import { compareImages } from "./images";
+import { keywordGaps } from "./keywords";
 import { analyzeOem } from "./oem";
 import { evaluate } from "./opportunity-engine";
 import { analyzeReviews } from "./reviews";
@@ -19,6 +20,7 @@ import type {
   BrandStat,
   ForecastSeries,
   ImageComparison,
+  KeywordGap,
   MarketSnapshot,
   OemAnalysis,
   Opportunity,
@@ -355,6 +357,11 @@ export function getSimilarProducts(id: string, limit = 5): SimilarProduct[] | nu
 /** ブランド別の集計（Phase 2）。 */
 export function getBrandAnalysis(): BrandStat[] {
   return brandAnalysis(productCatalog);
+}
+
+/** 中日市場のキーワード差分析（Phase 2）。 */
+export function getKeywordGaps(): KeywordGap[] {
+  return keywordGaps(productCatalog);
 }
 
 /** 指定商品のレビュー分析（有望方向の販売市場基準）。存在しなければ null。 */

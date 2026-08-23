@@ -271,6 +271,22 @@ export interface ImageComparison {
   verdict: ImageVerdict;
 }
 
+/** キーワードの市場バイアス（Phase 2）。 */
+export type KeywordBias = "jp" | "cn" | "balanced";
+
+/** 中日市場のキーワード強度差 1 件（Phase 2）。 */
+export interface KeywordGap {
+  keyword: string;
+  productCount: number;
+  /** 0-100。 */
+  jpStrength: number;
+  /** 0-100。 */
+  cnStrength: number;
+  /** jpStrength - cnStrength。 */
+  gap: number;
+  bias: KeywordBias;
+}
+
 /** UI-005 が表示する 1 商品の詳細。 */
 export interface ProductDetail {
   id: string;
