@@ -220,6 +220,42 @@ def test_keyword_gaps_ranked_by_absolute_gap(client: TestClient) -> None:
     assert abs_gaps == sorted(abs_gaps, reverse=True)
 
 
+def test_data_source_registry_and_mock_fetch(client: TestClient) -> None:
+    sources = client.get("/ingest/sources").json()
+    assert "mock" in sources and "http" in sources
+    res = client.post("/ingest/fetch", json={"sourceName": "mock", "query": "キャンプ", "limit": 5})
+    assert res.status_code == 200
+    assert res.json()["imported"] == 5
+    # 未登録データ源は 404。
+    assert client.post("/ingest/fetch", json={"sourceName": "nope"}).status_code == 404
+
+
+def test_unconfigured_http_source_is_safe_noop(client: TestClient) -> None:
+    # DATA_SOURCE_URL 未設定なら 0 件・エラーなしで返る。
+    res = client.post("/ingest/fetch", json={"sourceName": "http", "query": "x"})
+    assert res.status_code == 200
+    assert res.json()["imported"] == 0
+
+
+def test_ingest_appends_price_history_and_rate_applies(client: TestClient) -> None:
+    # 為替レートを設定 → 以降の CNY 価格正規化に反映される。
+    assert client.post("/exchange-rates", json={"rate": 25.0}).status_code == 201
+    item = {
+        "id": "ph-test-1",
+        "name": "履歴テスト商品",
+        "brand": "OEM",
+        "category": "キャンプ用品",
+        "subCategory": "テスト",
+        "japan": {"market": "JP", "price": 5000, "currency": "JPY", "demandIndex": 70},
+        "china": {"market": "CN", "price": 100, "currency": "CNY", "demandIndex": 50},
+    }
+    assert client.post("/ingest/products", json=[item]).status_code == 200
+    history = client.get("/products/ph-test-1/price-history").json()
+    # 取り込み時点（当月）の価格履歴が追記され、現在の市場価格に一致する。
+    assert history["japan"][-1]["price"] == 5000
+    assert history["china"][-1]["price"] == 2500  # 100 CNY * 25.0
+
+
 def test_settings_roundtrip_changes_profit(client: TestClient) -> None:
     headers = _auth_headers(client)
     before = client.get("/products/opp-001").json()["economics"]["estimatedProfit"]

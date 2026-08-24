@@ -81,3 +81,40 @@ def test_forecast_price_horizon_and_bounds() -> None:
     assert all(p.value >= 1 for p in result.points)
     # 上昇系列なので傾きは正。
     assert result.slope_per_month > 0
+
+
+# ---- 実データ接続: HTTP アダプタ雛形 ------------------------------------
+
+
+def test_http_source_unconfigured_returns_empty(monkeypatch) -> None:
+    from app.datasources.http_source import HttpDataSource
+
+    monkeypatch.delenv("DATA_SOURCE_URL", raising=False)
+    source = HttpDataSource()
+    assert source.configured is False
+    assert source.fetch("camping") == []
+
+
+def test_http_source_maps_and_skips_records() -> None:
+    from app.datasources.http_source import HttpDataSource
+    from app.schemas import SizeTier
+
+    source = HttpDataSource()
+    good = {
+        "id": "sku-1",
+        "name": "折りたたみランタン",
+        "brand": "OEM",
+        "category": "キャンプ用品",
+        "subCategory": "LEDランタン",
+        "sizeTier": "S",
+        "japan": {"price": 4980, "currency": "JPY", "demandIndex": 80},
+        "china": {"price": 90, "currency": "CNY", "demandIndex": 55},
+    }
+    mapped = source._map_record(good)
+    assert mapped is not None
+    assert mapped.id == "sku-1"
+    assert mapped.size_tier == SizeTier.S
+    # 中国価格は通貨を保持して返す（正規化は ingest 側）。
+    assert mapped.china.price == 90 and mapped.china.currency == "CNY"
+    # 必須項目を欠くレコードは読み飛ばす。
+    assert source._map_record({"name": "no id"}) is None

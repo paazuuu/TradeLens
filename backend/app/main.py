@@ -44,6 +44,7 @@ from . import (
     similar,
     timeseries,
 )
+from . import datasources
 from .agents import category_agent, product_discovery
 from .agents.schemas import CategoryTree, DecomposeRequest, DiscoveryRequest, DiscoveryResponse
 from .db import SessionLocal, get_session, init_db
@@ -53,6 +54,8 @@ from .schemas import (
     AnalyticsResponse,
     BrandStat,
     DashboardResponse,
+    ExchangeRateInput,
+    FetchRequest,
     ImageComparison,
     IngestResponse,
     KeywordGap,
@@ -486,6 +489,28 @@ def post_discovery(req: DiscoveryRequest) -> DiscoveryResponse:
 @app.post("/ingest/products", response_model=IngestResponse)
 def ingest_products(items: list[ProductImport], session: Session = Depends(get_session)) -> IngestResponse:
     return ingest.import_products(session, items)
+
+
+@app.get("/ingest/sources", response_model=list[str])
+def list_sources() -> list[str]:
+    """登録済みデータ源の名前一覧（実データ接続の差し替え口）。"""
+    return datasources.available_sources()
+
+
+@app.post("/ingest/fetch", response_model=IngestResponse)
+def ingest_fetch(req: FetchRequest, session: Session = Depends(get_session)) -> IngestResponse:
+    """指定データ源から取得して DB へ取り込む（source.fetch → import_products）。"""
+    try:
+        return datasources.run_ingestion(session, req.source_name, req.query, req.limit)
+    except KeyError:
+        raise HTTPException(status_code=404, detail=f"unknown data source: {req.source_name}") from None
+
+
+@app.post("/exchange-rates", status_code=201)
+def post_exchange_rate(req: ExchangeRateInput, session: Session = Depends(get_session)) -> dict[str, float]:
+    """為替レートを登録する（最新が CNY→JPY 正規化に使われる）。"""
+    rate = ingest.set_exchange_rate(session, req)
+    return {"rate": rate}
 
 
 # ---- 商品マッチング（STEP 9）。日中商品を複数シグナルでマッチングする。 ----

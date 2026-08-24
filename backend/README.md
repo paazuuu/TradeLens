@@ -159,17 +159,49 @@ export ANTHROPIC_MODEL="claude-opus-5"   # 任意（既定 claude-opus-5）
 スコア・商流方向は DB の生シグナル（価格・競合・需要・リスク等）から計算するため、
 `products.score` などの投入値は生の属性、`opportunities` はエンジンの計算結果を保持する。
 
-## データ取り込み（STEP 8 / MVP-02）
+## データ取り込み・実データ接続（STEP 8 / MVP-02）
 
 外部の商品・価格データを正規化して DB へ取り込む経路。スクレイピングではなく、
 正規 API / 許可されたデータ提供手段 / データインポートを前提とする（原則: セクション 9）。
 
 | メソッド | パス | 説明 |
 |---|---|---|
-| POST | `/ingest/products` | `ProductImport[]` を正規化して upsert（categories/products/market_prices） |
+| POST | `/ingest/products` | `ProductImport[]` を正規化して upsert（products/market_prices/price_history） |
+| GET | `/ingest/sources` | 登録済みデータ源の名前一覧 |
+| POST | `/ingest/fetch` | 指定データ源から取得して取り込む（`{sourceName, query, limit}`） |
+| POST | `/exchange-rates` | 為替レートを登録（最新が CNY→JPY 正規化に使われる） |
 
-- 中国価格（CNY）は DB の為替レートで円へ正規化し、原価・通貨・取得日時・取得元を保存する（原則: セクション 94）。
-- データソースは `app/datasources/`（`DataSource` プロトコル + `MockDataSource`）で差し替え可能。
+取り込みフロー（下流のエンジン・API・フロントは無改修）:
+
+```
+実データ源 → DataSource.fetch() → ProductImport[] → import_products() → DB
+             (app/datasources)     (正規化スキーマ)    (app/ingest.py)     products / market_prices / price_history
+```
+
+- **データ源アダプタ**は `app/datasources/` に実装し、`_SOURCE_FACTORIES` に登録する。
+  - `MockDataSource`（`mock`）: 内蔵カタログを返す実証用。
+  - `HttpDataSource`（`http`）: 正規 API（JSON）から取得する**参照雛形**。環境変数
+    `DATA_SOURCE_URL` 等で設定し、未設定なら空リストを返す安全な no-op。対象 API に
+    合わせて `_map_record` を書き換えるだけでよい（`httpx` は遅延 import）。
+- 中国価格（CNY）は DB の最新為替レートで円へ正規化し、原価・通貨・取得日時・取得元を保存する（原則: セクション 94）。
+- **価格履歴**は取り込みのたびに当月 1 点を追記（同月は上書き）。これにより Phase 2 の
+  価格・需要予測が実データで蓄積・更新される。
+- 定期実行は `scheduler`（`MONITOR_INTERVAL_SECONDS`）や cron から
+  `datasources.run_ingestion(session, source, query)` を呼ぶ。
+
+実 API を接続する最小手順:
+
+```bash
+export DATA_SOURCE_URL="https://api.example.com/products"   # 正規 API のみ（規約遵守）
+export DATA_SOURCE_API_KEY="..."                            # 任意
+# 為替を実レートに更新 → データ源から取得取り込み
+curl -X POST localhost:8000/exchange-rates -d '{"rate": 21.3}' -H 'Content-Type: application/json'
+curl -X POST localhost:8000/ingest/fetch  -d '{"sourceName":"http","query":"キャンプ用品"}' -H 'Content-Type: application/json'
+```
+
+新しいデータ源は `app/datasources/http_source.py` を参考に 1 ファイル追加し、レジストリへ
+登録するだけで繋がる。レビュー本文・画像を取得できる場合は、`reviews.py` / `images.py` の
+合成ロジックを本文集計・画像特徴量比較へ差し替える。
 
 ## 自動監視・アラート（STEP 17-18）
 

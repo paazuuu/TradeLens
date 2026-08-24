@@ -12,10 +12,25 @@ from datetime import datetime, timezone
 from sqlalchemy import delete, select
 from sqlalchemy.orm import Session
 
-from .models import Category, ExchangeRate, MarketPrice, Product
-from .schemas import IngestResponse, MarketPriceInput, ProductImport
+from .models import Category, ExchangeRate, MarketPrice, PriceHistory, Product
+from .schemas import ExchangeRateInput, IngestResponse, MarketPriceInput, ProductImport
 
 _DEFAULT_RATE = 21.0
+
+
+def set_exchange_rate(session: Session, inp: ExchangeRateInput) -> float:
+    """為替レートを 1 点追記する（最新が正規化に使われる）。実レート更新の受け口。"""
+    session.add(
+        ExchangeRate(
+            base_currency=inp.base_currency,
+            quote_currency=inp.quote_currency,
+            rate=inp.rate,
+            kind=inp.kind,
+            checked_at=datetime.now(timezone.utc),
+        )
+    )
+    session.commit()
+    return inp.rate
 
 
 def _current_rate(session: Session) -> float:
@@ -47,6 +62,7 @@ def _get_or_create_category(session: Session, name: str) -> Category:
 def _upsert_market_price(
     session: Session, product_id: str, market: str, snap: MarketPriceInput, rate: float, now: datetime
 ) -> None:
+    normalized = _normalized_jpy(snap.price, snap.currency, rate)
     session.execute(
         delete(MarketPrice).where(MarketPrice.product_id == product_id, MarketPrice.market == market)
     )
@@ -54,7 +70,7 @@ def _upsert_market_price(
         MarketPrice(
             product_id=product_id,
             market=market,
-            normalized_price=_normalized_jpy(snap.price, snap.currency, rate),
+            normalized_price=normalized,
             original_price=snap.price,
             currency=snap.currency,
             competitors=snap.competitors,
@@ -63,6 +79,39 @@ def _upsert_market_price(
             source=snap.source,
             source_url=snap.source_url,
             checked_at=now,
+        )
+    )
+    _record_price_history(session, product_id, market, normalized, snap.demand_index, snap.source, now)
+
+
+def _record_price_history(
+    session: Session,
+    product_id: str,
+    market: str,
+    price: int,
+    demand_index: int | None,
+    source: str | None,
+    now: datetime,
+) -> None:
+    """当月の価格履歴を 1 点に保つ（同月は上書き、月をまたぐと蓄積）。
+
+    取得のたびに呼ばれ、price_history に月次の実データを積み上げる。これにより
+    Phase 2 の価格・需要予測（`forecast.py`）が実データで動く。
+    """
+    existing = session.scalars(
+        select(PriceHistory).where(PriceHistory.product_id == product_id, PriceHistory.market == market)
+    ).all()
+    for row in existing:
+        if row.recorded_at.year == now.year and row.recorded_at.month == now.month:
+            session.delete(row)
+    session.add(
+        PriceHistory(
+            product_id=product_id,
+            market=market,
+            price=price,
+            demand_index=demand_index,
+            source=source,
+            recorded_at=now,
         )
     )
 

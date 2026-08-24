@@ -339,6 +339,23 @@ class IngestResponse(CamelModel):
     market_prices: int
 
 
+class FetchRequest(CamelModel):
+    """データ源からの取得取り込み要求（実データ接続）。"""
+
+    source_name: str = "mock"
+    query: str = ""
+    limit: int = 20
+
+
+class ExchangeRateInput(CamelModel):
+    """為替レートの登録（CNY→JPY 正規化に使用）。"""
+
+    base_currency: str = "CNY"
+    quote_currency: str = "JPY"
+    rate: float
+    kind: str = "current"
+
+
 class SettingsOut(CamelModel):
     exchange_rate: float
     intl_shipping: int
