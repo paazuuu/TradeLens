@@ -68,7 +68,11 @@ class HttpDataSource:
 
         items: list[ProductImport] = []
         for raw in records[:limit]:
-            mapped = self._map_record(raw)
+            try:
+                mapped = self._map_record(raw)
+            except Exception:  # noqa: BLE001  不正な 1 件で全体を止めず、その行だけ読み飛ばす。
+                logger.exception("failed to map record; skipping: %r", raw)
+                continue
             if mapped is not None:
                 items.append(mapped)
         return items

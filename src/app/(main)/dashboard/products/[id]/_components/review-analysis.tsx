@@ -47,7 +47,7 @@ export function ReviewAnalysis({ analysis }: { analysis: ReviewAnalysisData }) {
           </div>
         </div>
 
-        <div className="flex flex-col gap-3">
+        <div className="grid grid-cols-1 gap-x-8 gap-y-3 sm:grid-cols-2">
           {analysis.aspects.map((aspect) => (
             <div className="flex flex-col gap-1" key={aspect.aspect}>
               <div className="flex items-center justify-between text-sm">

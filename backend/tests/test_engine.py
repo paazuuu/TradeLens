@@ -118,3 +118,31 @@ def test_http_source_maps_and_skips_records() -> None:
     assert mapped.china.price == 90 and mapped.china.currency == "CNY"
     # 必須項目を欠くレコードは読み飛ばす。
     assert source._map_record({"name": "no id"}) is None
+
+
+def test_http_source_skips_bad_record_in_batch(monkeypatch) -> None:
+    import httpx
+
+    from app.datasources.http_source import HttpDataSource
+
+    monkeypatch.setenv("DATA_SOURCE_URL", "https://example.test/products")
+
+    class _FakeResponse:
+        def raise_for_status(self) -> None:
+            pass
+
+        def json(self) -> list[dict]:
+            return [
+                {
+                    "id": "good",
+                    "name": "良品",
+                    "japan": {"price": 100, "currency": "JPY"},
+                    "china": {"price": 10, "currency": "CNY"},
+                },
+                {"id": "bad", "name": "欠損", "japan": {}, "china": {}},  # japan.price 欠損
+            ]
+
+    monkeypatch.setattr(httpx, "get", lambda *args, **kwargs: _FakeResponse())
+    items = HttpDataSource().fetch("q")
+    # 不正な 1 件で全体が止まらず、正常な 1 件のみ取り込む。
+    assert [item.id for item in items] == ["good"]

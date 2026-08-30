@@ -46,18 +46,23 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
     <div className="@container/main flex flex-col gap-4 md:gap-6">
       <ProductHeader detail={detail} />
       <MarketComparison detail={detail} />
-      {history && forecast ? <PriceForecast forecast={forecast} history={history} /> : null}
+      {/* 利益判断（コア） */}
       <div className="grid grid-cols-1 gap-4 md:gap-6 lg:grid-cols-2">
         <ProfitSimulator detail={detail} />
         <AiExplanation detail={detail} />
       </div>
-      {reviews || imageComparison ? (
+      {/* 価格・需要トレンド */}
+      {history && forecast ? <PriceForecast forecast={forecast} history={history} /> : null}
+      {/* 仕入れ検証（OEM・画像はいずれもコンパクトなので横並び） */}
+      {oem || imageComparison ? (
         <div className="grid grid-cols-1 gap-4 md:gap-6 lg:grid-cols-2">
-          {reviews ? <ReviewAnalysis analysis={reviews} /> : null}
+          {oem ? <OemAnalysis analysis={oem} /> : null}
           {imageComparison ? <ImageComparison comparison={imageComparison} /> : null}
         </div>
       ) : null}
-      {oem ? <OemAnalysis analysis={oem} /> : null}
+      {/* レビュー分析（全幅・観点は 2 列） */}
+      {reviews ? <ReviewAnalysis analysis={reviews} /> : null}
+      {/* 代替候補 */}
       {similar ? <SimilarProducts items={similar} /> : null}
     </div>
   );
