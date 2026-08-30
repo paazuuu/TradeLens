@@ -1,6 +1,19 @@
 -- 自動生成: python scripts/dump_schema.py（編集しない）
 -- docs/development_plan.md セクション 73
 
+CREATE TABLE app_settings (
+	id INTEGER NOT NULL, 
+	exchange_rate FLOAT NOT NULL, 
+	intl_shipping INTEGER NOT NULL, 
+	domestic_shipping INTEGER NOT NULL, 
+	import_tax_rate FLOAT NOT NULL, 
+	platform_fee_rate FLOAT NOT NULL, 
+	min_margin FLOAT NOT NULL, 
+	min_score INTEGER NOT NULL, 
+	updated_at TIMESTAMP WITH TIME ZONE NOT NULL, 
+	PRIMARY KEY (id)
+);
+
 CREATE TABLE categories (
 	id SERIAL NOT NULL, 
 	name VARCHAR(200) NOT NULL, 
@@ -24,6 +37,7 @@ CREATE TABLE users (
 	id VARCHAR(64) NOT NULL, 
 	email VARCHAR(320) NOT NULL, 
 	display_name VARCHAR(200), 
+	password_hash VARCHAR(255), 
 	created_at TIMESTAMP WITH TIME ZONE NOT NULL, 
 	PRIMARY KEY (id), 
 	UNIQUE (email)
@@ -137,6 +151,18 @@ CREATE TABLE opportunities (
 	risk VARCHAR(16) NOT NULL, 
 	reasons JSON, 
 	computed_at TIMESTAMP WITH TIME ZONE NOT NULL, 
+	PRIMARY KEY (id), 
+	FOREIGN KEY(product_id) REFERENCES products (id)
+);
+
+CREATE TABLE price_history (
+	id SERIAL NOT NULL, 
+	product_id VARCHAR(64) NOT NULL, 
+	market VARCHAR(2) NOT NULL, 
+	price INTEGER NOT NULL, 
+	demand_index INTEGER, 
+	source VARCHAR(200), 
+	recorded_at TIMESTAMP WITH TIME ZONE NOT NULL, 
 	PRIMARY KEY (id), 
 	FOREIGN KEY(product_id) REFERENCES products (id)
 );

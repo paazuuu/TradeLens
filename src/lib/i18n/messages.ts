@@ -147,6 +147,9 @@ export interface Messages {
     statsCnToJp: string;
     reset: string;
     viewOpportunities: string;
+    decompositionTitle: string;
+    sourceAi: string;
+    sourceRule: string;
   };
   productDetail: {
     notFound: string;
@@ -180,6 +183,80 @@ export interface Messages {
     confidenceMatch: string;
     confidencePrice: string;
     confidenceProfit: string;
+  };
+  forecast: {
+    historyTitle: string;
+    historyDescription: string;
+    forecastTitle: string;
+    forecastDescription: string;
+    priceForecast: string;
+    demandForecast: string;
+    japanPrice: string;
+    chinaPrice: string;
+    actual: string;
+    forecastLabel: string;
+    confidence: string;
+    trend: string;
+    trendUp: string;
+    trendDown: string;
+    trendFlat: string;
+    perMonth: string;
+    demandUnit: string;
+  };
+  oem: {
+    title: string;
+    description: string;
+    likelihood: string;
+    supplyStability: string;
+    verdict: { likely: string; possible: string; unlikely: string };
+    signals: {
+      noBrand: string;
+      oemMatchType: string;
+      largePriceGap: string;
+      massProduction: string;
+      weakBrandSignal: string;
+    };
+  };
+  similar: {
+    title: string;
+    description: string;
+    similarity: string;
+    empty: string;
+  };
+  reviews: {
+    title: string;
+    description: string;
+    overall: string;
+    positive: string;
+    neutral: string;
+    negative: string;
+    sampleSize: string;
+    mentions: string;
+    aspects: {
+      quality: string;
+      price: string;
+      delivery: string;
+      durability: string;
+      design: string;
+      usability: string;
+    };
+  };
+  imageComparison: {
+    title: string;
+    description: string;
+    similarity: string;
+    unavailable: string;
+    verdict: { sameProduct: string; likelySame: string; different: string };
+  };
+  keywords: {
+    title: string;
+    description: string;
+    keyword: string;
+    products: string;
+    jpStrength: string;
+    cnStrength: string;
+    gap: string;
+    bias: { jp: string; cn: string; balanced: string };
   };
   simulator: {
     title: string;
@@ -215,6 +292,15 @@ export interface Messages {
     count: string;
     avgScore: string;
     profit: string;
+    brandTitle: string;
+    brandDescription: string;
+    brandColumn: string;
+    products: string;
+    avgMargin: string;
+    totalProfit: string;
+    competition: string;
+    oemShare: string;
+    direction: string;
   };
   labels: {
     directionShort: Record<TradeDirection, string>;
@@ -407,6 +493,9 @@ const ja: Messages = {
     statsCnToJp: "中国 → 日本",
     reset: "条件を変えて再検索",
     viewOpportunities: "有望商品ランキングを見る",
+    decompositionTitle: "AI カテゴリー分解",
+    sourceAi: "AI 生成",
+    sourceRule: "ルールベース",
   },
   productDetail: {
     notFound: "商品が見つかりませんでした。",
@@ -440,6 +529,80 @@ const ja: Messages = {
     confidenceMatch: "マッチ信頼度",
     confidencePrice: "価格信頼度",
     confidenceProfit: "利益信頼度",
+  },
+  forecast: {
+    historyTitle: "価格・需要の推移",
+    historyDescription: "過去 12 か月の日中価格と需要指数（合成データ）。",
+    forecastTitle: "価格・需要予測",
+    forecastDescription: "有望方向の販売市場を対象に、先 6 か月をトレンド＋季節性で予測します。",
+    priceForecast: "価格予測",
+    demandForecast: "需要予測",
+    japanPrice: "日本価格",
+    chinaPrice: "中国価格",
+    actual: "実績",
+    forecastLabel: "予測",
+    confidence: "予測信頼度",
+    trend: "トレンド",
+    trendUp: "上昇傾向",
+    trendDown: "下降傾向",
+    trendFlat: "横ばい",
+    perMonth: "/月",
+    demandUnit: "需要指数",
+  },
+  oem: {
+    title: "OEM 分析",
+    description: "ブランド有無・マッチ・価格差・供給規模から OEM/ノーブランド由来の可能性を推定します。",
+    likelihood: "OEM 可能性",
+    supplyStability: "供給安定性",
+    verdict: { likely: "可能性高", possible: "可能性あり", unlikely: "可能性低" },
+    signals: {
+      noBrand: "ノーブランド/OEM 表記",
+      oemMatchType: "OEM・類似マッチ",
+      largePriceGap: "大きな価格差",
+      massProduction: "中国側の多数出品（量産）",
+      weakBrandSignal: "弱いブランド信号",
+    },
+  },
+  similar: {
+    title: "類似・代替候補",
+    description: "サブカテゴリー・名称・ブランド・価格帯の近さから、横断で類似商品を探索します。",
+    similarity: "類似度",
+    empty: "類似候補は見つかりませんでした。",
+  },
+  reviews: {
+    title: "レビュー分析",
+    description: "需要・リスク・レビュー件数から観点別の評価を推定します（合成データ）。",
+    overall: "総合評価",
+    positive: "肯定的",
+    neutral: "中立",
+    negative: "否定的",
+    sampleSize: "レビュー件数",
+    mentions: "言及数",
+    aspects: {
+      quality: "品質",
+      price: "価格",
+      delivery: "配送",
+      durability: "耐久性",
+      design: "デザイン",
+      usability: "使いやすさ",
+    },
+  },
+  imageComparison: {
+    title: "画像比較",
+    description: "日中出品の画像一致度を推定します。",
+    similarity: "推定画像一致度",
+    unavailable: "画像未取得のため、マッチ情報からの推定値です。",
+    verdict: { sameProduct: "同一商品", likelySame: "同一の可能性", different: "別商品の可能性" },
+  },
+  keywords: {
+    title: "キーワード差分析",
+    description: "商品名の共通キーワードごとに日中市場の強度を比較します。片側で強く他方で手薄なほど商機を示します。",
+    keyword: "キーワード",
+    products: "商品数",
+    jpStrength: "日本強度",
+    cnStrength: "中国強度",
+    gap: "差",
+    bias: { jp: "日本優勢", cn: "中国優勢", balanced: "拮抗" },
   },
   simulator: {
     title: "利益シミュレーター",
@@ -475,6 +638,15 @@ const ja: Messages = {
     count: "件数",
     avgScore: "平均Score",
     profit: "推定利益",
+    brandTitle: "ブランド・競合分析",
+    brandDescription: "ブランド単位で平均Score・利益率・推定利益合計・競合水準・OEM 比率を集計します。",
+    brandColumn: "ブランド",
+    products: "商品数",
+    avgMargin: "平均利益率",
+    totalProfit: "推定利益合計",
+    competition: "競合水準",
+    oemShare: "OEM 比率",
+    direction: "優勢方向",
   },
   labels: {
     directionShort: { JP_TO_CN: "日→中", CN_TO_JP: "中→日" },
@@ -670,6 +842,9 @@ const zh: Messages = {
     statsCnToJp: "中国 → 日本",
     reset: "调整条件重新搜索",
     viewOpportunities: "查看优质商品排行",
+    decompositionTitle: "AI 品类拆解",
+    sourceAi: "AI 生成",
+    sourceRule: "规则生成",
   },
   productDetail: {
     notFound: "未找到该商品。",
@@ -703,6 +878,80 @@ const zh: Messages = {
     confidenceMatch: "匹配可信度",
     confidencePrice: "价格可信度",
     confidenceProfit: "利润可信度",
+  },
+  forecast: {
+    historyTitle: "价格与需求走势",
+    historyDescription: "过去 12 个月的中日价格与需求指数（合成数据）。",
+    forecastTitle: "价格与需求预测",
+    forecastDescription: "以优势方向的销售市场为对象，基于趋势与季节性预测未来 6 个月。",
+    priceForecast: "价格预测",
+    demandForecast: "需求预测",
+    japanPrice: "日本价格",
+    chinaPrice: "中国价格",
+    actual: "实际",
+    forecastLabel: "预测",
+    confidence: "预测可信度",
+    trend: "趋势",
+    trendUp: "上升趋势",
+    trendDown: "下降趋势",
+    trendFlat: "持平",
+    perMonth: "/月",
+    demandUnit: "需求指数",
+  },
+  oem: {
+    title: "OEM 分析",
+    description: "根据品牌有无、匹配、价格差与供应规模，推断商品来自 OEM/无品牌的可能性。",
+    likelihood: "OEM 可能性",
+    supplyStability: "供应稳定性",
+    verdict: { likely: "可能性高", possible: "有可能", unlikely: "可能性低" },
+    signals: {
+      noBrand: "无品牌/OEM 标注",
+      oemMatchType: "OEM・相似匹配",
+      largePriceGap: "较大价格差",
+      massProduction: "中国侧大量在售（量产）",
+      weakBrandSignal: "品牌信号弱",
+    },
+  },
+  similar: {
+    title: "相似・替代候选",
+    description: "根据子类目、名称、品牌与价格区间的接近度，跨类目探索相似商品。",
+    similarity: "相似度",
+    empty: "未找到相似候选。",
+  },
+  reviews: {
+    title: "评价分析",
+    description: "根据需求、风险与评价数量推断各观点的评分（合成数据）。",
+    overall: "综合评分",
+    positive: "正面",
+    neutral: "中立",
+    negative: "负面",
+    sampleSize: "评价数量",
+    mentions: "提及数",
+    aspects: {
+      quality: "品质",
+      price: "价格",
+      delivery: "配送",
+      durability: "耐久性",
+      design: "设计",
+      usability: "易用性",
+    },
+  },
+  imageComparison: {
+    title: "图片比较",
+    description: "推断中日商品图片的一致度。",
+    similarity: "预估图片一致度",
+    unavailable: "因未获取图片，为基于匹配信息的推断值。",
+    verdict: { sameProduct: "同一商品", likelySame: "可能同一", different: "可能不同" },
+  },
+  keywords: {
+    title: "关键词差异分析",
+    description: "按商品名称的共同关键词比较中日市场强度。一侧强、另一侧薄弱，越可能是商机。",
+    keyword: "关键词",
+    products: "商品数",
+    jpStrength: "日本强度",
+    cnStrength: "中国强度",
+    gap: "差值",
+    bias: { jp: "日本占优", cn: "中国占优", balanced: "相当" },
   },
   simulator: {
     title: "利润模拟器",
@@ -738,6 +987,15 @@ const zh: Messages = {
     count: "数量",
     avgScore: "平均Score",
     profit: "预估利润",
+    brandTitle: "品牌・竞争分析",
+    brandDescription: "按品牌汇总平均Score、利润率、预估利润合计、竞争水平与 OEM 比例。",
+    brandColumn: "品牌",
+    products: "商品数",
+    avgMargin: "平均利润率",
+    totalProfit: "预估利润合计",
+    competition: "竞争水平",
+    oemShare: "OEM 比例",
+    direction: "优势方向",
   },
   labels: {
     directionShort: { JP_TO_CN: "日→中", CN_TO_JP: "中→日" },

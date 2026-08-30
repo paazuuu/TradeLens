@@ -5,6 +5,7 @@
 
 from __future__ import annotations
 
+from datetime import datetime
 from enum import Enum
 
 from pydantic import BaseModel, ConfigDict
@@ -215,6 +216,207 @@ class MarketsResponse(CamelModel):
     comparison: list[MarketComparisonRow]
 
 
+class DashboardKpis(CamelModel):
+    total_products: int
+    promising: int
+    jp_to_cn: int
+    cn_to_jp: int
+    seasonal: int
+    avg_margin: float
+
+
+class TopOpportunity(CamelModel):
+    id: str
+    name: str
+    sub_category: str
+    best_direction: TradeDirection
+    score: int
+    estimated_profit: int
+    margin_rate: float
+    top_reason: ReasonCode | None = None
+
+
+class TopListItem(CamelModel):
+    id: str
+    name: str
+    direction: TradeDirection
+    value: float
+
+
+class DashboardResponse(CamelModel):
+    kpis: DashboardKpis
+    top_opportunities: list[TopOpportunity]
+    top_price_gap: list[TopListItem]
+    top_margin: list[TopListItem]
+    top_demand: list[TopListItem]
+    top_seasonal: list["SeasonalOpportunity"]
+
+
+class DirectionSplit(CamelModel):
+    direction: TradeDirection
+    count: int
+    avg_profit: int
+
+
+class SubCategoryScore(CamelModel):
+    sub_category: str
+    avg_score: int
+    count: int
+
+
+class MarginBucket(CamelModel):
+    id: str
+    label: str
+    count: int
+
+
+class ProfitByProduct(CamelModel):
+    id: str
+    name: str
+    estimated_profit: int
+    direction: TradeDirection
+
+
+class AnalyticsResponse(CamelModel):
+    direction_split: list[DirectionSplit]
+    sub_category_scores: list[SubCategoryScore]
+    margin_distribution: list[MarginBucket]
+    profit_by_product: list[ProfitByProduct]
+
+
+class MatchRequest(CamelModel):
+    japan_name: str
+    china_name: str
+    japan_brand: str | None = None
+    china_brand: str | None = None
+    japan_model: str | None = None
+    china_model: str | None = None
+
+
+class MatchSignals(CamelModel):
+    name_similarity: float
+    model_match: bool
+    brand_match: bool
+
+
+class MatchResult(CamelModel):
+    match_type: MatchType
+    confidence: int
+    signals: MatchSignals
+
+
+class MarketPriceInput(CamelModel):
+    market: str  # JP / CN
+    price: float  # 原通貨での価格
+    currency: str = "JPY"
+    competitors: int | None = None
+    demand_index: int | None = None
+    review_count: int | None = None
+    source: str | None = None
+    source_url: str | None = None
+
+
+class ProductImport(CamelModel):
+    id: str
+    name: str
+    brand: str
+    category: str
+    sub_category: str
+    model: str = ""
+    size_tier: SizeTier = SizeTier.M
+    seasonality: Season = Season.ALL_YEAR
+    risk: RiskLevel = RiskLevel.MEDIUM
+    match_type: MatchType = MatchType.SIMILAR
+    match_confidence: int | None = None
+    image_url: str | None = None
+    japan: MarketPriceInput
+    china: MarketPriceInput
+
+
+class IngestResponse(CamelModel):
+    imported: int
+    products: int
+    market_prices: int
+
+
+class FetchRequest(CamelModel):
+    """データ源からの取得取り込み要求（実データ接続）。"""
+
+    source_name: str = "mock"
+    query: str = ""
+    limit: int = 20
+
+
+class ExchangeRateInput(CamelModel):
+    """為替レートの登録（CNY→JPY 正規化に使用）。"""
+
+    base_currency: str = "CNY"
+    quote_currency: str = "JPY"
+    rate: float
+    kind: str = "current"
+
+
+class SettingsOut(CamelModel):
+    exchange_rate: float
+    intl_shipping: int
+    domestic_shipping: int
+    import_tax_rate: float
+    platform_fee_rate: float
+    min_margin: float
+    min_score: int
+
+
+class AlertOut(CamelModel):
+    id: int
+    kind: str  # opportunity / season
+    product_id: str | None = None
+    message: str | None = None
+    payload: dict | None = None
+    created_at: datetime
+    read_at: datetime | None = None
+
+
+class MonitoringResult(CamelModel):
+    watched_users: int
+    alerts_created: int
+
+
+class WatchlistCreate(CamelModel):
+    kind: str  # category / product
+    value: str
+    monitor_frequency: str = "weekly"
+
+
+class WatchlistItemOut(CamelModel):
+    id: int
+    kind: str
+    value: str
+    monitor_frequency: str
+
+
+class RegisterRequest(CamelModel):
+    email: str
+    password: str
+    display_name: str | None = None
+
+
+class LoginRequest(CamelModel):
+    email: str
+    password: str
+
+
+class UserOut(CamelModel):
+    id: str
+    email: str
+    display_name: str | None = None
+
+
+class TokenResponse(CamelModel):
+    access_token: str
+    token_type: str = "bearer"
+    user: UserOut
+
+
 class SeasonalOpportunity(CamelModel):
     id: str
     name: str
@@ -228,3 +430,141 @@ class SeasonalOpportunity(CamelModel):
     current_score: int
     predicted_score: int
     estimated_profit: int
+
+
+# ---- 価格履歴・予測（Phase 2, セクション 41・47）----
+
+
+class TimeSeriesPoint(CamelModel):
+    """月次時系列の 1 点。date は "YYYY-MM"。"""
+
+    date: str
+    price: int
+    demand: int
+
+
+class ForecastPoint(CamelModel):
+    """予測時系列の 1 点。date は "YYYY-MM"。"""
+
+    date: str
+    value: int
+
+
+class PriceHistoryResponse(CamelModel):
+    """商品 1 件の日中価格・需要履歴。"""
+
+    product_id: str
+    japan: list[TimeSeriesPoint]
+    china: list[TimeSeriesPoint]
+
+
+class ForecastSeries(CamelModel):
+    """1 系列の予測結果（トレンド傾き・信頼度付き）。"""
+
+    points: list[ForecastPoint]
+    slope_per_month: float
+    confidence: int
+
+
+class ProductForecastResponse(CamelModel):
+    """価格予測・需要予測（有望方向の販売市場基準）。"""
+
+    product_id: str
+    market: str  # 予測対象の販売市場（JP / CN）
+    best_direction: TradeDirection
+    price_forecast: ForecastSeries
+    demand_forecast: ForecastSeries
+
+
+# ---- OEM 分析（Phase 2, セクション 41・88 の 15）----
+
+
+class OemSignal(str, Enum):
+    NO_BRAND = "noBrand"
+    OEM_MATCH_TYPE = "oemMatchType"
+    LARGE_PRICE_GAP = "largePriceGap"
+    MASS_PRODUCTION = "massProduction"
+    WEAK_BRAND_SIGNAL = "weakBrandSignal"
+
+
+class OemAnalysis(CamelModel):
+    """1 商品の OEM 可能性分析。"""
+
+    product_id: str
+    score: int  # 0-100（OEM 可能性）
+    verdict: str  # likely / possible / unlikely
+    supply_stability: float  # 0-1
+    signals: list[OemSignal]
+
+
+class SimilarProduct(CamelModel):
+    """類似・代替候補 1 件（Phase 2）。"""
+
+    id: str
+    name: str
+    brand: str
+    sub_category: str
+    similarity: int  # 0-100
+    best_direction: TradeDirection
+    score: int  # Opportunity Score
+    estimated_profit: int
+
+
+class BrandStat(CamelModel):
+    """ブランド別の集計（Phase 2）。"""
+
+    brand: str
+    product_count: int
+    avg_score: int
+    avg_margin_rate: float
+    total_estimated_profit: int
+    avg_competitors: int
+    competition_level: str  # low / medium / high
+    oem_share: float  # 0-1
+    dominant_direction: TradeDirection | None
+
+
+class ReviewAspect(CamelModel):
+    """観点別のレビュー評価（Phase 2）。"""
+
+    aspect: str  # quality / price / delivery / durability / design / usability
+    sentiment: int  # 0-100
+    mentions: int
+
+
+class ReviewAnalysis(CamelModel):
+    """商品のレビュー分析（Phase 2、合成センチメント）。"""
+
+    product_id: str
+    overall: int  # 0-100
+    positive: int  # %
+    neutral: int  # %
+    negative: int  # %
+    sample_size: int
+    aspects: list[ReviewAspect]
+
+
+class ImageComparison(CamelModel):
+    """日中出品の画像比較（Phase 2）。MVP は画像未取得のためメタデータ由来の推定。"""
+
+    product_id: str
+    images_available: bool
+    jp_image_url: str | None
+    cn_image_url: str | None
+    similarity: int  # 0-100（推定画像一致度）
+    verdict: str  # sameProduct / likelySame / different
+
+
+class KeywordGap(CamelModel):
+    """中日市場のキーワード強度差 1 件（Phase 2）。"""
+
+    keyword: str
+    product_count: int
+    jp_strength: int  # 0-100
+    cn_strength: int  # 0-100
+    gap: int  # jp_strength - cn_strength
+    bias: str  # jp / cn / balanced
+
+
+# 前方参照（SeasonalOpportunity）の解決。
+DashboardResponse.model_rebuild()

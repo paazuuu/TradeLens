@@ -6,8 +6,8 @@
  * 推奨仕入れ時期を導出する（STEP 14 初期版）。データ蓄積後に予測モデルへ移行する。
  */
 
-import { deriveEconomics } from "./economics";
 import { productCatalog } from "./mock-data";
+import { evaluate } from "./opportunity-engine";
 import type { Season, TradeDirection } from "./types";
 
 /** 需要接近の緊急度。🔥30日 / 🟢60日 / 🟡90日 / それ以遠。 */
@@ -84,21 +84,22 @@ export function getSeasonalOpportunities(now: Date = new Date()): SeasonalOpport
     const daysToPeak = daysUntilPeak(now, peakMonth);
     const urgency = urgencyOf(daysToPeak);
     const recommendedBuyMonth = ((peakMonth - 2 + 11) % 12) + 1;
-    const economics = deriveEconomics(entry);
+    // スコア・商流方向・利益はエンジンで導出し、Opportunity 一覧と整合させる。
+    const best = evaluate(entry).best;
 
     items.push({
       id: entry.id,
       name: entry.name,
       subCategory: entry.subCategory,
-      bestDirection: entry.bestDirection,
+      bestDirection: best.direction,
       season,
       peakMonth,
       daysToPeak,
       recommendedBuyMonth,
       urgency,
-      currentScore: entry.score,
-      predictedScore: Math.min(100, entry.score + scoreBoost(urgency)),
-      estimatedProfit: economics.estimatedProfit,
+      currentScore: best.score,
+      predictedScore: Math.min(100, best.score + scoreBoost(urgency)),
+      estimatedProfit: best.economics.estimatedProfit,
     });
   }
 

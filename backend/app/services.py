@@ -1,6 +1,5 @@
-"""ドメインサービス。カタログ＋Profit Engine から API 応答を導出する。
-
-フロントの src/lib/research/{mock-data,markets,seasonal,research-flow}.ts に対応。
+"""ドメインサービス。カタログ＋各エンジン（Profit / Opportunity / Direction / Seasonal）から
+API 応答を導出する。スコアと商流方向は opportunity_engine で計算する（STEP 12-13）。
 """
 
 from __future__ import annotations
@@ -8,8 +7,15 @@ from __future__ import annotations
 from datetime import datetime, timezone
 from statistics import mean, median
 
+from . import opportunity_engine
 from .catalog import PRODUCT_CATALOG, CatalogEntry
-from .economics import derive_confidence, derive_economics, derive_reasons, price_gap_rate
+from .economics import (
+    CostParams,
+    DEFAULT_COST_PARAMS,
+    derive_confidence,
+    derive_reasons,
+    price_gap_rate,
+)
 from .schemas import (
     MarketAggregate,
     MarketComparisonRow,
@@ -29,8 +35,8 @@ from .schemas import (
 # ---- Opportunities -------------------------------------------------------
 
 
-def _to_opportunity(entry: CatalogEntry) -> Opportunity:
-    economics = derive_economics(entry)
+def _to_opportunity(entry: CatalogEntry, params: CostParams = DEFAULT_COST_PARAMS) -> Opportunity:
+    best = opportunity_engine.evaluate(entry, params).best
     return Opportunity(
         id=entry.id,
         name=entry.name,
@@ -38,15 +44,15 @@ def _to_opportunity(entry: CatalogEntry) -> Opportunity:
         category=entry.category,
         sub_category=entry.sub_category,
         image_url=entry.image_url,
-        best_direction=entry.best_direction,
+        best_direction=best.direction,
         japan_price=entry.japan.price,
         china_price=entry.china.price,
         price_gap_rate=price_gap_rate(entry),
-        estimated_profit=economics.estimated_profit,
-        margin_rate=economics.margin_rate,
+        estimated_profit=best.economics.estimated_profit,
+        margin_rate=best.economics.margin_rate,
         seasonality=entry.seasonality,
         risk=entry.risk,
-        score=entry.score,
+        score=best.score,
         match_type=entry.match_type,
         match_confidence=entry.match_confidence,
     )
@@ -57,9 +63,10 @@ def list_opportunities(
     min_score: int | None = None,
     min_margin: float | None = None,
     entries: list[CatalogEntry] | None = None,
+    params: CostParams = DEFAULT_COST_PARAMS,
 ) -> list[Opportunity]:
     source = entries if entries is not None else PRODUCT_CATALOG
-    items = [_to_opportunity(entry) for entry in source]
+    items = [_to_opportunity(entry, params) for entry in source]
     if direction is not None:
         items = [o for o in items if o.best_direction == direction]
     if min_score is not None:
@@ -69,12 +76,14 @@ def list_opportunities(
     return sorted(items, key=lambda o: o.score, reverse=True)
 
 
-def get_product_detail(product_id: str, entries: list[CatalogEntry] | None = None) -> ProductDetail | None:
+def get_product_detail(
+    product_id: str, entries: list[CatalogEntry] | None = None, params: CostParams = DEFAULT_COST_PARAMS
+) -> ProductDetail | None:
     source = entries if entries is not None else PRODUCT_CATALOG
     entry = next((e for e in source if e.id == product_id), None)
     if entry is None:
         return None
-    economics = derive_economics(entry)
+    best = opportunity_engine.evaluate(entry, params).best
     return ProductDetail(
         id=entry.id,
         name=entry.name,
@@ -83,18 +92,18 @@ def get_product_detail(product_id: str, entries: list[CatalogEntry] | None = Non
         sub_category=entry.sub_category,
         model=entry.model,
         image_url=entry.image_url,
-        best_direction=entry.best_direction,
+        best_direction=best.direction,
         seasonality=entry.seasonality,
         risk=entry.risk,
         match_type=entry.match_type,
         match_confidence=entry.match_confidence,
-        score=entry.score,
+        score=best.score,
         japan=entry.japan,
         china=entry.china,
         price_gap_rate=price_gap_rate(entry),
-        economics=economics,
-        reasons=derive_reasons(entry, economics),
-        confidence=derive_confidence(entry, economics),
+        economics=best.economics,
+        reasons=derive_reasons(entry, best.direction, best.economics),
+        confidence=derive_confidence(entry, best.direction, best.economics),
     )
 
 
@@ -102,28 +111,30 @@ def get_product_detail(product_id: str, entries: list[CatalogEntry] | None = Non
 
 
 def compute_research_result(
-    options: ResearchOptions, entries: list[CatalogEntry] | None = None
+    options: ResearchOptions,
+    entries: list[CatalogEntry] | None = None,
+    params: CostParams = DEFAULT_COST_PARAMS,
 ) -> ResearchResult:
     from .schemas import MatchType
 
     source = entries if entries is not None else PRODUCT_CATALOG
-    matched: list[CatalogEntry] = []
+    matched: list[Opportunity] = []
     for entry in source:
-        economics = derive_economics(entry)
+        opportunity = _to_opportunity(entry, params)
         direction_ok = (
             options.direction == ResearchDirection.BOTH
-            or entry.best_direction.value == options.direction.value
+            or opportunity.best_direction.value == options.direction.value
         )
-        score_ok = entry.score >= options.min_score
-        margin_ok = economics.margin_rate * 100 >= options.min_margin
+        score_ok = opportunity.score >= options.min_score
+        margin_ok = opportunity.margin_rate * 100 >= options.min_margin
         oem_ok = options.include_oem or entry.match_type != MatchType.OEM_CANDIDATE
         similar_ok = options.include_similar or entry.match_type != MatchType.SIMILAR
         seasonal_ok = options.include_seasonal or entry.seasonality == Season.ALL_YEAR
         if direction_ok and score_ok and margin_ok and oem_ok and similar_ok and seasonal_ok:
-            matched.append(entry)
+            matched.append(opportunity)
 
-    jp_to_cn = sum(1 for e in matched if e.best_direction == TradeDirection.JP_TO_CN)
-    cn_to_jp = sum(1 for e in matched if e.best_direction == TradeDirection.CN_TO_JP)
+    jp_to_cn = sum(1 for o in matched if o.best_direction == TradeDirection.JP_TO_CN)
+    cn_to_jp = sum(1 for o in matched if o.best_direction == TradeDirection.CN_TO_JP)
     products_analyzed = 0 if not matched else len(matched) * 14 + 6
 
     return ResearchResult(
@@ -183,16 +194,19 @@ def get_market_overview(entries: list[CatalogEntry] | None = None) -> MarketOver
     )
 
 
-def get_market_comparison(entries: list[CatalogEntry] | None = None) -> list[MarketComparisonRow]:
+def get_market_comparison(
+    entries: list[CatalogEntry] | None = None, params: CostParams = DEFAULT_COST_PARAMS
+) -> list[MarketComparisonRow]:
     source = entries if entries is not None else PRODUCT_CATALOG
     by_sub: dict[str, list[CatalogEntry]] = {}
     for entry in source:
         by_sub.setdefault(entry.sub_category, []).append(entry)
 
     rows: list[MarketComparisonRow] = []
-    for sub_category, entries in by_sub.items():
-        export_count = sum(1 for e in entries if e.best_direction == TradeDirection.JP_TO_CN)
-        import_count = len(entries) - export_count
+    for sub_category, sub_entries in by_sub.items():
+        opportunities = [_to_opportunity(e, params) for e in sub_entries]
+        export_count = sum(1 for o in opportunities if o.best_direction == TradeDirection.JP_TO_CN)
+        import_count = len(opportunities) - export_count
         dominant: TradeDirection | None = None
         if export_count > import_count:
             dominant = TradeDirection.JP_TO_CN
@@ -202,18 +216,18 @@ def get_market_comparison(entries: list[CatalogEntry] | None = None) -> list[Mar
         rows.append(
             MarketComparisonRow(
                 sub_category=sub_category,
-                product_count=len(entries),
+                product_count=len(sub_entries),
                 japan=_aggregate(
-                    [e.japan.price for e in entries],
-                    [e.japan.competitors for e in entries],
-                    [e.japan.demand_index for e in entries],
+                    [e.japan.price for e in sub_entries],
+                    [e.japan.competitors for e in sub_entries],
+                    [e.japan.demand_index for e in sub_entries],
                 ),
                 china=_aggregate(
-                    [e.china.price for e in entries],
-                    [e.china.competitors for e in entries],
-                    [e.china.demand_index for e in entries],
+                    [e.china.price for e in sub_entries],
+                    [e.china.competitors for e in sub_entries],
+                    [e.china.demand_index for e in sub_entries],
                 ),
-                avg_score=round(mean(e.score for e in entries)),
+                avg_score=round(mean(o.score for o in opportunities)),
                 dominant_direction=dominant,
             )
         )
@@ -253,7 +267,9 @@ def _score_boost(urgency: str) -> int:
 
 
 def get_seasonal_opportunities(
-    now: datetime | None = None, entries: list[CatalogEntry] | None = None
+    now: datetime | None = None,
+    entries: list[CatalogEntry] | None = None,
+    params: CostParams = DEFAULT_COST_PARAMS,
 ) -> list[SeasonalOpportunity]:
     now = now or datetime.now(timezone.utc)
     source = entries if entries is not None else PRODUCT_CATALOG
@@ -262,26 +278,26 @@ def get_seasonal_opportunities(
     for entry in source:
         if entry.seasonality == Season.ALL_YEAR:
             continue
+        best = opportunity_engine.evaluate(entry, params).best
         peak_month = SEASON_PEAK_MONTH[entry.seasonality]
         days_to_peak = _days_until_peak(now, peak_month)
         urgency = _urgency(days_to_peak)
         recommended_buy_month = ((peak_month - 2 + 11) % 12) + 1
-        economics = derive_economics(entry)
 
         items.append(
             SeasonalOpportunity(
                 id=entry.id,
                 name=entry.name,
                 sub_category=entry.sub_category,
-                best_direction=entry.best_direction,
+                best_direction=best.direction,
                 season=entry.seasonality,
                 peak_month=peak_month,
                 days_to_peak=days_to_peak,
                 recommended_buy_month=recommended_buy_month,
                 urgency=urgency,
-                current_score=entry.score,
-                predicted_score=min(100, entry.score + _score_boost(urgency)),
-                estimated_profit=economics.estimated_profit,
+                current_score=best.score,
+                predicted_score=min(100, best.score + _score_boost(urgency)),
+                estimated_profit=best.economics.estimated_profit,
             )
         )
 

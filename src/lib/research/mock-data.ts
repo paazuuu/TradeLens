@@ -6,8 +6,32 @@
  * API 呼び出しへ差し替える。データはすべて架空であり、実在ブランド・価格を示さない。
  */
 
-import { deriveConfidence, deriveEconomics, deriveReasons, priceGapRate } from "./economics";
-import type { Opportunity, ProductCatalogEntry, ProductDetail } from "./types";
+import { brandAnalysis } from "./brands";
+import { deriveConfidence, deriveReasons, priceGapRate } from "./economics";
+import { type ForecastResult, forecastDemand, forecastPrice } from "./forecast";
+import { type SeriesPoint, syntheticSeries, ymOf } from "./history";
+import { compareImages } from "./images";
+import { keywordGaps } from "./keywords";
+import { analyzeOem } from "./oem";
+import { evaluate } from "./opportunity-engine";
+import { analyzeReviews } from "./reviews";
+import { findSimilar } from "./similar";
+import type {
+  BrandStat,
+  ForecastSeries,
+  ImageComparison,
+  KeywordGap,
+  MarketSnapshot,
+  OemAnalysis,
+  Opportunity,
+  PriceHistory,
+  ProductCatalogEntry,
+  ProductDetail,
+  ProductForecast,
+  ReviewAnalysis,
+  SimilarProduct,
+  TimeSeriesPoint,
+} from "./types";
 
 export const productCatalog: ProductCatalogEntry[] = [
   {
@@ -216,9 +240,9 @@ export const productCatalog: ProductCatalogEntry[] = [
   },
 ];
 
-/** カタログ 1 件を Opportunity 要約へ変換する。 */
+/** カタログ 1 件を Opportunity 要約へ変換する（score/bestDirection はエンジンで導出）。 */
 function toOpportunity(entry: ProductCatalogEntry): Opportunity {
-  const economics = deriveEconomics(entry);
+  const { best } = evaluate(entry);
   return {
     id: entry.id,
     name: entry.name,
@@ -226,15 +250,15 @@ function toOpportunity(entry: ProductCatalogEntry): Opportunity {
     category: entry.category,
     subCategory: entry.subCategory,
     imageUrl: entry.imageUrl,
-    bestDirection: entry.bestDirection,
+    bestDirection: best.direction,
     japanPrice: entry.japan.price,
     chinaPrice: entry.china.price,
     priceGapRate: priceGapRate(entry),
-    estimatedProfit: economics.estimatedProfit,
-    marginRate: economics.marginRate,
+    estimatedProfit: best.economics.estimatedProfit,
+    marginRate: best.economics.marginRate,
     seasonality: entry.seasonality,
     risk: entry.risk,
-    score: entry.score,
+    score: best.score,
     matchType: entry.matchType,
     matchConfidence: entry.matchConfidence,
   };
@@ -248,7 +272,9 @@ export function getProductDetail(id: string): ProductDetail | null {
   const entry = productCatalog.find((item) => item.id === id);
   if (!entry) return null;
 
-  const economics = deriveEconomics(entry);
+  const { best } = evaluate(entry);
+  const direction = best.direction;
+  const economics = best.economics;
   return {
     id: entry.id,
     name: entry.name,
@@ -257,17 +283,116 @@ export function getProductDetail(id: string): ProductDetail | null {
     subCategory: entry.subCategory,
     model: entry.model,
     imageUrl: entry.imageUrl,
-    bestDirection: entry.bestDirection,
+    bestDirection: direction,
     seasonality: entry.seasonality,
     risk: entry.risk,
     matchType: entry.matchType,
     matchConfidence: entry.matchConfidence,
-    score: entry.score,
+    score: best.score,
     japan: entry.japan,
     china: entry.china,
     priceGapRate: priceGapRate(entry),
     economics,
-    reasons: deriveReasons(entry, economics),
-    confidence: deriveConfidence(entry, economics),
+    reasons: deriveReasons(entry, direction, economics),
+    confidence: deriveConfidence(entry, direction, economics),
+  };
+}
+
+// ---- Phase 2: 価格履歴・予測（backend timeseries.py に対応）----
+
+function snapshotFor(entry: ProductCatalogEntry, market: string): MarketSnapshot {
+  return market === "JP" ? entry.japan : entry.china;
+}
+
+function seriesFor(entry: ProductCatalogEntry, market: string, now: Date): SeriesPoint[] {
+  const snap = snapshotFor(entry, market);
+  return syntheticSeries(
+    entry.id,
+    market,
+    snap.price,
+    snap.demandIndex,
+    entry.seasonality,
+    now.getFullYear(),
+    now.getMonth() + 1,
+  );
+}
+
+function toTimeSeries(points: SeriesPoint[]): TimeSeriesPoint[] {
+  return points.map((p) => ({ date: ymOf(p.year, p.month), price: p.price, demand: p.demand }));
+}
+
+function toForecastSeries(result: ForecastResult): ForecastSeries {
+  return {
+    points: result.points.map((p) => ({ date: ymOf(p.year, p.month), value: p.value })),
+    slopePerMonth: result.slopePerMonth,
+    confidence: result.confidence,
+  };
+}
+
+/** 指定商品の日中価格・需要履歴（過去 12 か月）を合成する。存在しなければ null。 */
+export function getPriceHistory(id: string, now: Date = new Date()): PriceHistory | null {
+  const entry = productCatalog.find((item) => item.id === id);
+  if (!entry) return null;
+  return {
+    productId: entry.id,
+    japan: toTimeSeries(seriesFor(entry, "JP", now)),
+    china: toTimeSeries(seriesFor(entry, "CN", now)),
+  };
+}
+
+/** 指定商品の OEM 分析。存在しなければ null。 */
+export function getOemAnalysis(id: string): OemAnalysis | null {
+  const entry = productCatalog.find((item) => item.id === id);
+  if (!entry) return null;
+  return analyzeOem(entry);
+}
+
+/** 指定商品に類似する商品を探索する。存在しなければ null。 */
+export function getSimilarProducts(id: string, limit = 5): SimilarProduct[] | null {
+  const entry = productCatalog.find((item) => item.id === id);
+  if (!entry) return null;
+  return findSimilar(entry, productCatalog, limit);
+}
+
+/** ブランド別の集計（Phase 2）。 */
+export function getBrandAnalysis(): BrandStat[] {
+  return brandAnalysis(productCatalog);
+}
+
+/** 中日市場のキーワード差分析（Phase 2）。 */
+export function getKeywordGaps(): KeywordGap[] {
+  return keywordGaps(productCatalog);
+}
+
+/** 指定商品のレビュー分析（有望方向の販売市場基準）。存在しなければ null。 */
+export function getReviewAnalysis(id: string): ReviewAnalysis | null {
+  const entry = productCatalog.find((item) => item.id === id);
+  if (!entry) return null;
+  return analyzeReviews(entry, evaluate(entry).best.direction);
+}
+
+/** 指定商品の画像比較（Phase 2）。存在しなければ null。 */
+export function getImageComparison(id: string): ImageComparison | null {
+  const entry = productCatalog.find((item) => item.id === id);
+  if (!entry) return null;
+  return compareImages(entry);
+}
+
+/** 指定商品の価格・需要予測（有望方向の販売市場、先 6 か月）。存在しなければ null。 */
+export function getProductForecast(id: string, now: Date = new Date()): ProductForecast | null {
+  const entry = productCatalog.find((item) => item.id === id);
+  if (!entry) return null;
+  const best = evaluate(entry).best;
+  const market = best.direction === "CN_TO_JP" ? "JP" : "CN";
+  const series = seriesFor(entry, market, now);
+  const prices = series.map((p) => p.price);
+  const demand = series.map((p) => p.demand);
+  const last = series[series.length - 1];
+  return {
+    productId: entry.id,
+    market,
+    bestDirection: best.direction,
+    priceForecast: toForecastSeries(forecastPrice(prices, entry.seasonality, last.year, last.month)),
+    demandForecast: toForecastSeries(forecastDemand(demand, entry.seasonality, last.year, last.month)),
   };
 }

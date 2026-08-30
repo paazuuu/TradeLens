@@ -1,5 +1,7 @@
 "use client";
 
+import { useRouter } from "next/navigation";
+
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Controller, useForm } from "react-hook-form";
 import { toast } from "sonner";
@@ -8,6 +10,7 @@ import { z } from "zod";
 import { Button } from "@/components/ui/button";
 import { Field, FieldError, FieldGroup, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
+import { isApiEnabled, register } from "@/lib/api/auth";
 
 const formSchema = z
   .object({
@@ -20,17 +23,8 @@ const formSchema = z
     path: ["confirmPassword"],
   });
 
-function onSubmit(data: z.infer<typeof formSchema>) {
-  toast("You submitted the following values", {
-    description: (
-      <pre className="mt-2 w-[320px] rounded-md bg-neutral-950 p-4">
-        <code className="text-white">{JSON.stringify(data, null, 2)}</code>
-      </pre>
-    ),
-  });
-}
-
 export function RegisterForm() {
+  const router = useRouter();
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -39,6 +33,19 @@ export function RegisterForm() {
       confirmPassword: "",
     },
   });
+
+  async function onSubmit(data: z.infer<typeof formSchema>) {
+    if (!isApiEnabled()) {
+      router.push("/dashboard/default");
+      return;
+    }
+    try {
+      await register(data.email, data.password);
+      router.push("/dashboard/default");
+    } catch {
+      toast.error("登録に失敗しました。メールアドレスが既に使われている可能性があります。");
+    }
+  }
 
   return (
     <form noValidate onSubmit={form.handleSubmit(onSubmit)} className="flex flex-col gap-4">

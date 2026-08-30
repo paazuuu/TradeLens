@@ -1,28 +1,23 @@
-import {
-  getDashboardKpis,
-  getTopByDemand,
-  getTopByMargin,
-  getTopByPriceGap,
-  getTopOpportunities,
-  getTopSeasonal,
-} from "@/lib/research/dashboard";
+import { fetchDashboard } from "@/lib/research/data-source";
 
 import { PageHeader } from "../_components/page-header";
 import { CrossBorderKpis } from "./_components/crossborder-kpis";
 import { DashboardTopLists } from "./_components/dashboard-top-lists";
 import { TopOpportunities } from "./_components/top-opportunities";
 
-export default function Page() {
+export default async function Page() {
+  const dashboard = await fetchDashboard();
+
   return (
     <div className="@container/main flex flex-col gap-4 md:gap-6">
       <PageHeader section="dashboard" />
-      <CrossBorderKpis kpis={getDashboardKpis()} />
-      <TopOpportunities items={getTopOpportunities()} />
+      <CrossBorderKpis kpis={dashboard.kpis} />
+      <TopOpportunities items={dashboard.topOpportunities} />
       <DashboardTopLists
-        demand={getTopByDemand()}
-        margin={getTopByMargin()}
-        priceGap={getTopByPriceGap()}
-        seasonal={getTopSeasonal()}
+        demand={dashboard.topDemand}
+        margin={dashboard.topMargin}
+        priceGap={dashboard.topPriceGap}
+        seasonal={dashboard.topSeasonal}
       />
     </div>
   );

@@ -147,6 +147,146 @@ export interface ProductCatalogEntry {
   china: MarketSnapshot;
 }
 
+/** 月次時系列の 1 点（価格履歴、Phase 2）。date は "YYYY-MM"。 */
+export interface TimeSeriesPoint {
+  date: string;
+  price: number;
+  demand: number;
+}
+
+/** 商品 1 件の日中価格・需要履歴（Phase 2）。 */
+export interface PriceHistory {
+  productId: string;
+  japan: TimeSeriesPoint[];
+  china: TimeSeriesPoint[];
+}
+
+/** 予測時系列の 1 点（Phase 2）。 */
+export interface ForecastPoint {
+  date: string;
+  value: number;
+}
+
+/** 1 系列の予測結果（トレンド傾き・信頼度付き、Phase 2）。 */
+export interface ForecastSeries {
+  points: ForecastPoint[];
+  /** 1 か月あたりの変化量（円 or 指数）。 */
+  slopePerMonth: number;
+  /** 0-100。トレンドの当てはまり（決定係数 R² ベース）。 */
+  confidence: number;
+}
+
+/** 価格予測・需要予測（有望方向の販売市場基準、Phase 2）。 */
+export interface ProductForecast {
+  productId: string;
+  /** 予測対象の販売市場（JP / CN）。 */
+  market: string;
+  bestDirection: TradeDirection;
+  priceForecast: ForecastSeries;
+  demandForecast: ForecastSeries;
+}
+
+/** OEM 分析のシグナルコード（Phase 2）。 */
+export type OemSignal = "noBrand" | "oemMatchType" | "largePriceGap" | "massProduction" | "weakBrandSignal";
+
+/** OEM 可能性の判定。 */
+export type OemVerdict = "likely" | "possible" | "unlikely";
+
+/** 1 商品の OEM 可能性分析（Phase 2）。 */
+export interface OemAnalysis {
+  productId: string;
+  /** 0-100（OEM 可能性）。 */
+  score: number;
+  verdict: OemVerdict;
+  /** 0-1（供給安定性）。 */
+  supplyStability: number;
+  signals: OemSignal[];
+}
+
+/** 類似・代替候補 1 件（Phase 2）。 */
+export interface SimilarProduct {
+  id: string;
+  name: string;
+  brand: string;
+  subCategory: string;
+  /** 0-100（類似度）。 */
+  similarity: number;
+  bestDirection: TradeDirection;
+  /** Opportunity Score。 */
+  score: number;
+  estimatedProfit: number;
+}
+
+/** 競合水準（Phase 2）。 */
+export type CompetitionLevel = "low" | "medium" | "high";
+
+/** ブランド別の集計（Phase 2）。 */
+export interface BrandStat {
+  brand: string;
+  productCount: number;
+  avgScore: number;
+  avgMarginRate: number;
+  totalEstimatedProfit: number;
+  avgCompetitors: number;
+  competitionLevel: CompetitionLevel;
+  /** 0-1（OEM 比率）。 */
+  oemShare: number;
+  dominantDirection: TradeDirection | null;
+}
+
+/** レビュー観点コード（Phase 2）。 */
+export type ReviewAspectCode = "quality" | "price" | "delivery" | "durability" | "design" | "usability";
+
+/** 観点別のレビュー評価（Phase 2）。 */
+export interface ReviewAspect {
+  aspect: ReviewAspectCode;
+  /** 0-100。 */
+  sentiment: number;
+  mentions: number;
+}
+
+/** 商品のレビュー分析（Phase 2、合成センチメント）。 */
+export interface ReviewAnalysis {
+  productId: string;
+  /** 0-100。 */
+  overall: number;
+  positive: number;
+  neutral: number;
+  negative: number;
+  sampleSize: number;
+  aspects: ReviewAspect[];
+}
+
+/** 画像比較の判定（Phase 2）。 */
+export type ImageVerdict = "sameProduct" | "likelySame" | "different";
+
+/** 日中出品の画像比較（Phase 2）。MVP は画像未取得のためメタデータ由来の推定。 */
+export interface ImageComparison {
+  productId: string;
+  imagesAvailable: boolean;
+  jpImageUrl: string | null;
+  cnImageUrl: string | null;
+  /** 0-100（推定画像一致度）。 */
+  similarity: number;
+  verdict: ImageVerdict;
+}
+
+/** キーワードの市場バイアス（Phase 2）。 */
+export type KeywordBias = "jp" | "cn" | "balanced";
+
+/** 中日市場のキーワード強度差 1 件（Phase 2）。 */
+export interface KeywordGap {
+  keyword: string;
+  productCount: number;
+  /** 0-100。 */
+  jpStrength: number;
+  /** 0-100。 */
+  cnStrength: number;
+  /** jpStrength - cnStrength。 */
+  gap: number;
+  bias: KeywordBias;
+}
+
 /** UI-005 が表示する 1 商品の詳細。 */
 export interface ProductDetail {
   id: string;

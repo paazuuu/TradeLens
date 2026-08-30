@@ -9,7 +9,7 @@ from __future__ import annotations
 
 from datetime import datetime, timezone
 
-from sqlalchemy import JSON, Boolean, DateTime, Float, ForeignKey, Integer, String, Text
+from sqlalchemy import JSON, DateTime, Float, ForeignKey, Integer, String, Text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from .db import Base
@@ -29,6 +29,8 @@ class User(Base, TimestampMixin):
     id: Mapped[str] = mapped_column(String(64), primary_key=True)
     email: Mapped[str] = mapped_column(String(320), unique=True, nullable=False)
     display_name: Mapped[str | None] = mapped_column(String(200))
+    # PBKDF2 ハッシュ（"pbkdf2_sha256$iterations$salt$hash"）。認証（STEP 19）。
+    password_hash: Mapped[str | None] = mapped_column(String(255))
 
 
 class Category(Base, TimestampMixin):
@@ -98,6 +100,24 @@ class MarketPrice(Base):
     checked_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_now, nullable=False)
 
     product: Mapped[Product] = relationship(back_populates="market_prices")
+
+
+class PriceHistory(Base):
+    """価格・需要の月次時系列（Phase 2, セクション 41・47）。
+
+    market_prices が現在値、本テーブルが履歴を持つ。取込・監視のたびに 1 点追加する。
+    recorded_at は当該月の代表日時（1 日）。price は JPY（円）。
+    """
+
+    __tablename__ = "price_history"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    product_id: Mapped[str] = mapped_column(ForeignKey("products.id"), nullable=False)
+    market: Mapped[str] = mapped_column(String(2), nullable=False)  # JP / CN
+    price: Mapped[int] = mapped_column(Integer, nullable=False)  # 正規化後（円）
+    demand_index: Mapped[int | None] = mapped_column(Integer)
+    source: Mapped[str | None] = mapped_column(String(200))
+    recorded_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_now, nullable=False)
 
 
 class ExchangeRate(Base):
@@ -195,6 +215,25 @@ class Watchlist(Base, TimestampMixin):
     kind: Mapped[str] = mapped_column(String(16), nullable=False)  # category / product
     value: Mapped[str] = mapped_column(String(400), nullable=False)  # カテゴリー名 / product_id
     monitor_frequency: Mapped[str] = mapped_column(String(16), nullable=False, default="weekly")
+
+
+class AppSetting(Base):
+    """グローバル設定（シングルトン, id=1）。UI-012 Settings と対応（STEP 5 / セクション 66）。
+
+    率はパーセントで保持し（例 5, 10, 20）、Profit Engine では /100 して用いる。
+    """
+
+    __tablename__ = "app_settings"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, default=1)
+    exchange_rate: Mapped[float] = mapped_column(Float, nullable=False, default=21.0)
+    intl_shipping: Mapped[int] = mapped_column(Integer, nullable=False, default=1600)
+    domestic_shipping: Mapped[int] = mapped_column(Integer, nullable=False, default=700)
+    import_tax_rate: Mapped[float] = mapped_column(Float, nullable=False, default=5.0)
+    platform_fee_rate: Mapped[float] = mapped_column(Float, nullable=False, default=10.0)
+    min_margin: Mapped[float] = mapped_column(Float, nullable=False, default=20.0)
+    min_score: Mapped[int] = mapped_column(Integer, nullable=False, default=70)
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_now, nullable=False)
 
 
 class Alert(Base):
